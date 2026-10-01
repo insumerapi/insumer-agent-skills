@@ -151,7 +151,7 @@ curl -X POST https://api.insumermodel.com/v1/trust \
   }'
 ```
 
-EIP-1186 proofs on every EVM token check (stablecoins, governance, staking, the EVM institutional rows, tokenized treasuries, stablecoin deposits and wrapped bitcoin) where the chain supports proofs; none for NFTs, names or non-EVM chains, and none for rows whose balance is computed rather than stored (Aave aTokens, BUIDL), which are declined at once with a reason. **Costs 6 credits** instead of 3; the premium is refunded whenever no proof could be delivered. Proofs reveal raw on-chain balances. Only opt in if the consumer explicitly needs the raw balances.
+An EVM token row carries an EIP-1186 storage proof when its balance slot can be discovered. Computed-balance rows (Aave aTokens, BUIDL), rows with non-standard storage layouts, and rows on chains that serve no proofs are declined with a reason; NFT and non-EVM rows are declined; unevaluated checks carry no proof key. **Costs 6 credits** instead of 3; the premium is refunded whenever no proof could be delivered. Proofs reveal raw on-chain balances. Only opt in if the consumer explicitly needs the raw balances.
 
 ## When to use trust profile vs. custom attest
 
