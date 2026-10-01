@@ -162,3 +162,4 @@ Verifiers should:
 - [JWS spec (RFC 7515)](https://datatracker.ietf.org/doc/html/rfc7515)
 - [JWK spec (RFC 7517)](https://datatracker.ietf.org/doc/html/rfc7517)
 - [`insumer-verify` on npm](https://www.npmjs.com/package/insumer-verify)
+- [`insumer-verify` on PyPI](https://pypi.org/project/insumer-verify/) (Python; same checks, same test vectors)

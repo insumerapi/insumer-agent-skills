@@ -132,6 +132,24 @@ npm install insumer-verify @noble/post-quantum
 
 `@noble/post-quantum` is an optional peer of `insumer-verify`. Without it, every response still verifies classically, but `checks.pq.status` reports `unverifiable` for a companion that is present, so the post-quantum signature is never actually checked.
 
+In Python, the same package is on PyPI under the same name, runs the same checks and passes the same 27 published test vectors:
+
+```bash
+pip install "insumer-verify[pq]"
+```
+
+```python
+from insumer_verify import verify_attestation, verify_trust_profile
+
+opts = {"jwks_url": "https://insumermodel.com/.well-known/jwks.json"}
+result = verify_attestation(response, **opts)        # the full /v1/attest response, or a JWT string
+if result["valid"] and response["data"]["attestation"]["pass"]:
+    ...
+profile = verify_trust_profile(trust_response, **opts)  # render profile["trust"] only when profile["valid"]
+```
+
+Without `dilithium-py` (the `[pq]` extra) the companion is reported `unverifiable`, exactly as the npm package behaves without `@noble/post-quantum`.
+
 ```javascript
 import { verifyAttestation, verifyTrustProfile } from 'insumer-verify';
 
@@ -202,7 +220,7 @@ For the raw form, the same loop runs over `data.attestation.results` with `data.
 
 ## Helper script
 
-`scripts/verify.py` — Python helper that takes a JWT, or a response object carrying `jwt` (from `/v1/attest` with `format: "jwt"`), on stdin and verifies the JWT against the public JWKS. Prints `OK` + payload, or `INVALID` + reason. It does not verify raw `sig` responses (every trust profile, and attestations without `format: "jwt"`); use Recipe 3 or `insumer-verify` for those.
+`scripts/verify.py` — Python helper that takes a JWT, or a response object carrying `jwt` (from `/v1/attest` with `format: "jwt"`), on stdin and verifies the JWT against the public JWKS. Prints `OK` + payload, or `INVALID` + reason. It does not verify raw `sig` responses (every trust profile, and attestations without `format: "jwt"`), condition hashes, the expiry binding or the post-quantum companion. For every check in Python, `pip install insumer-verify` (above) is the complete path; use Recipe 3 or `insumer-verify` on npm in JavaScript.
 
 ```bash
 echo '{"jwt":"eyJhbG...","kid":"insumer-attest-v2"}' | python scripts/verify.py
