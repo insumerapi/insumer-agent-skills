@@ -27,8 +27,8 @@ def main() -> int:
     parser.add_argument("--xrpl", help="Optional XRPL wallet (r-address)")
     parser.add_argument("--bitcoin", help="Optional Bitcoin address")
     parser.add_argument("--tron", help="Optional Tron wallet (T-address)")
-    parser.add_argument("--stellar", help="Optional Stellar wallet (G-address; adds no checks, evaluates the Stellar institutional entries)")
-    parser.add_argument("--sui", help="Optional Sui wallet (0x + 64 hex chars; adds no checks, evaluates the Sui institutional entry)")
+    parser.add_argument("--stellar", help="Optional Stellar wallet (G-address; adds no dimension, evaluates the Stellar rows in institutional stablecoins)")
+    parser.add_argument("--sui", help="Optional Sui wallet (0x + 64 hex chars; adds no dimension, evaluates the Sui rows: institutional USDC and tokenized-treasury USDY)")
     parser.add_argument("--proof", choices=["merkle"], help="Set 'merkle' for EIP-1186 proofs (6 credits)")
     args = parser.parse_args()
 

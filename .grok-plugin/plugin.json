@@ -1,6 +1,6 @@
 {
   "name": "insumer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "InsumerAPI wallet auth: condition-based access for blockchain wallets. Get an API key, attest wallet conditions (token balances across 37 chains, plus NFT ownership, EAS attestations and Farcaster IDs where supported), pull signed wallet trust profiles, and verify every signed response offline against the public JWKS.",
   "author": {
     "name": "InsumerAPI",

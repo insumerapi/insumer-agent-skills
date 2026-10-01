@@ -49,12 +49,12 @@ export INSUMER_API_KEY='insr_live_...'
 | Field per entry | Required | Notes |
 |---|---|---|
 | `wallet` | yes | EVM address, `0x` + 40 hex chars |
-| `solanaWallet` | optional | Adds Solana USDC dimension to this wallet's profile |
-| `xrplWallet` | optional | Adds XRPL stablecoin dimension (RLUSD + USDC) |
-| `bitcoinWallet` | optional | Adds Bitcoin Holdings dimension (native BTC) |
-| `tronWallet` | optional | Adds Tron dimension (USDT-TRC20) |
-| `stellarWallet` | optional | Evaluates the Stellar checks in the institutional stablecoins dimension |
-| `suiWallet` | optional | Evaluates the Sui check in the institutional stablecoins dimension |
+| `solanaWallet` | optional | Adds the 14-check `solana` dimension to this wallet's profile and evaluates the Solana rows in institutional stablecoins |
+| `xrplWallet` | optional | Adds the `xrpl` dimension (RLUSD, USDC, OUSG) and evaluates the XRPL row in institutional stablecoins |
+| `bitcoinWallet` | optional | Adds the `bitcoin` dimension (native BTC) |
+| `tronWallet` | optional | Adds the `tron` dimension (USDT, USD1, WBTC) |
+| `stellarWallet` | optional | Evaluates the Stellar rows in the institutional stablecoins dimension; adds no dimension |
+| `suiWallet` | optional | Evaluates the Sui rows (USDC in institutional stablecoins, USDY in tokenized treasuries); adds no dimension |
 
 Top-level `proof: "merkle"` (optional) applies to all wallets in the batch and costs 6 credits per wallet.
 
@@ -69,9 +69,9 @@ Top-level `proof: "merkle"` (optional) applies to all wallets in the batch and c
         "trust": {
           "id": "TRST-A1B2C",
           "wallet": "0xd8dA...",
-          "conditionSetVersion": "v2",
+          "conditionSetVersion": "2026-10",
           "dimensions": { ... },
-          "summary": { "totalChecks": 45, "totalPassed": 6, "totalFailed": 33, "totalNotEvaluated": 6, ... },
+          "summary": { "totalChecks": 145, "totalPassed": 7, "totalFailed": 131, "totalNotEvaluated": 7, ... },
           "profiledAt": "2026-...",
           "expiresAt": "2026-..."
         },

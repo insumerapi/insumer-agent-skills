@@ -2,10 +2,11 @@
 name: insumer-trust
 description: >
   InsumerAPI wallet trust profile: a curated multi-dimensional condition-based
-  access bundle for a single wallet. 45 base checks across 26 chains in 5
+  access bundle for a single wallet. 145 base checks across 27 chains in 9
   dimensions (stablecoins, governance, NFTs, staking, institutional
-  stablecoins), plus optional Solana, XRPL, Bitcoin and Tron dimensions (up to
-  50 checks across 28 chains in 9 dimensions). Use when the user wants an InsumerAPI
+  stablecoins, tokenized treasuries, stablecoin deposits, wrapped bitcoin,
+  names), plus optional Solana, XRPL, Bitcoin and Tron dimensions (up to 166
+  checks across 29 chains in 13 dimensions). Use when the user wants an InsumerAPI
   trust profile, a pre-built signed wallet snapshot rather than conditions
   specified one by one (for example an InsumerAPI pre-transaction trust check). The profile is signed once, as a whole. Carry it unchanged:
   never re-sign or wrap it.
@@ -16,26 +17,31 @@ metadata:
 
 # InsumerAPI Wallet Trust Profile
 
-A curated condition bundle for a single wallet. Same primitive as `insumer-attest` (read → evaluate → sign), but the conditions are pre-defined — 45 base checks across 26 chains in 5 dimensions, with optional cross-chain extensions. **Boolean, not balance, on every check.**
+A curated condition bundle for a single wallet. Same primitive as `insumer-attest` (read → evaluate → sign), but the conditions are pre-defined: 145 base checks across 27 chains in 9 dimensions, with optional cross-chain extensions. **Boolean, not balance, on every check.** Every row is a presence check.
 
 Pick this skill when the developer wants a snapshot. Pick `insumer-attest` when they want to specify their own conditions.
 
 ## What you get
 
-- **45 base checks** across **26 chains** in **5 dimensions**:
-  - **Stablecoins** (27) — USDC and USDT balances across 22 EVM chains, including USDC on Arc
-  - **Governance** (4) — UNI and AAVE on Ethereum, ARB on Arbitrum, OP on Optimism
-  - **NFTs** (3) — BAYC, Pudgy Penguins, Wrapped CryptoPunks
-  - **Staking** (3) — stETH, rETH, cbETH
-  - **Institutional stablecoins** (8) — EURCV, USDCV, USDC, and BENJI across Ethereum, Solana, XRPL, Stellar, and Sui. Always present; the Solana, XRPL, Stellar and Sui entries are evaluated only when the matching wallet is supplied, and are otherwise marked `evaluated: false`
+- **145 base checks** across **27 chains** in **9 dimensions** (23 EVM chains plus the Solana, XRPL, Stellar and Sui rows inside the base dimensions):
+  - **Stablecoins** (52): USDC, USDT, OUSD, PYUSD, USDG, USD1, RLUSD, USDS, DAI and EURC across 23 EVM chains, including USDC on Arc and USDG on Robinhood Chain
+  - **Governance** (8): UNI, AAVE, ENS, LDO, SKY and COMP on Ethereum, ARB on Arbitrum, OP on Optimism
+  - **NFTs** (3): BAYC, Pudgy Penguins, Wrapped CryptoPunks
+  - **Staking** (5): stETH, rETH, cbETH, wstETH, weETH
+  - **Institutional stablecoins** (8): EURCV, USDCV, USDC, and BENJI across Ethereum, Solana, XRPL, Stellar, and Sui. Always present; the Solana, XRPL, Stellar and Sui entries are evaluated only when the matching wallet is supplied, and are otherwise marked `evaluated: false`
+  - **Tokenized treasuries** (16): BUIDL, USYC, OUSG, USTB, USDY (the USDY on Sui row needs `suiWallet`, otherwise `evaluated: false`)
+  - **Stablecoin deposits** (39): Aave v3 aUSDC/aUSDT, sUSDS, sDAI, listed Morpho USDC vaults
+  - **Wrapped bitcoin** (12): cbBTC, WBTC, tBTC
+  - **Names** (2): ENS .eth, Basenames
 - **Optional extensions** (when extra wallet addresses are provided):
-  - **Solana USDC** — pass `solanaWallet`
-  - **XRPL stablecoins** — pass `xrplWallet` (RLUSD + USDC checks)
-  - **Bitcoin holdings** — pass `bitcoinWallet` (native BTC balance)
-  - **Tron USDT** — pass `tronWallet` (USDT-TRC20)
-  - **Stellar / Sui** — pass `stellarWallet` / `suiWallet`. These add no checks and no dimension; they let the Stellar and Sui entries in institutional stablecoins be evaluated
-- Up to 50 total checks across 28 chains in 9 dimensions when all extensions are included
+  - **Solana** (14): pass `solanaWallet` (USDC, EURC, OUSD, PYUSD, USD1, USDG, USDS, BUIDL, USDY, WBTC, cbBTC, tBTC, JitoSOL, mSOL on Solana)
+  - **XRPL** (3): pass `xrplWallet` (RLUSD, USDC, OUSG)
+  - **Bitcoin** (1): pass `bitcoinWallet` (native BTC)
+  - **Tron** (3): pass `tronWallet` (USDT, USD1, WBTC)
+  - **Stellar / Sui**: pass `stellarWallet` / `suiWallet`. These add no checks and no dimension; they let the Stellar and Sui rows inside the base dimensions be evaluated
+- Up to 166 total checks across 29 chains in 13 dimensions when all extensions are included
 - Each check returns its own boolean; the response includes per-dimension and overall summaries
+- `conditionSetVersion` is a dated set id (currently `"2026-10"`), the same on every key version, signed with the profile. It names the check list that was run: log it, never reject on it
 - 3 credits standard, 6 credits with `proof: "merkle"`
 
 ## Architectural property to preserve
@@ -77,15 +83,19 @@ Response shape (abbreviated):
     "trust": {
       "id": "TRST-A1B2C",
       "wallet": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-      "conditionSetVersion": "v2",
+      "conditionSetVersion": "2026-10",
       "dimensions": {
-        "stablecoins":               { "checks": [...], "passCount": 3, "failCount": 24, "notEvaluatedCount": 0, "total": 27 },
-        "governance":                { "checks": [...], "passCount": 2, "failCount": 2,  "notEvaluatedCount": 0, "total": 4 },
+        "stablecoins":               { "checks": [...], "passCount": 3, "failCount": 49, "notEvaluatedCount": 0, "total": 52 },
+        "governance":                { "checks": [...], "passCount": 2, "failCount": 6,  "notEvaluatedCount": 0, "total": 8 },
         "nfts":                      { "checks": [...], "passCount": 0, "failCount": 3,  "notEvaluatedCount": 0, "total": 3 },
-        "staking":                   { "checks": [...], "passCount": 1, "failCount": 2,  "notEvaluatedCount": 0, "total": 3 },
-        "institutional_stablecoins": { "checks": [...], "passCount": 0, "failCount": 2,  "notEvaluatedCount": 6, "total": 8 }
+        "staking":                   { "checks": [...], "passCount": 1, "failCount": 4,  "notEvaluatedCount": 0, "total": 5 },
+        "institutional_stablecoins": { "checks": [...], "passCount": 0, "failCount": 2,  "notEvaluatedCount": 6, "total": 8 },
+        "tokenized_treasuries":      { "checks": [...], "passCount": 0, "failCount": 15, "notEvaluatedCount": 1, "total": 16 },
+        "stablecoin_deposits":       { "checks": [...], "passCount": 0, "failCount": 39, "notEvaluatedCount": 0, "total": 39 },
+        "wrapped_bitcoin":           { "checks": [...], "passCount": 0, "failCount": 12, "notEvaluatedCount": 0, "total": 12 },
+        "names":                     { "checks": [...], "passCount": 1, "failCount": 1,  "notEvaluatedCount": 0, "total": 2 }
       },
-      "summary": { "totalChecks": 45, "totalPassed": 6, "totalFailed": 33, "totalNotEvaluated": 6, "dimensionsWithActivity": 3, "dimensionsChecked": 5 },
+      "summary": { "totalChecks": 145, "totalPassed": 7, "totalFailed": 131, "totalNotEvaluated": 7, "dimensionsWithActivity": 4, "dimensionsChecked": 9 },
       "profiledAt": "...",
       "expiresAt": "..."
     },
@@ -141,7 +151,7 @@ curl -X POST https://api.insumermodel.com/v1/trust \
   }'
 ```
 
-EIP-1186 proofs on every EVM token check (stablecoins, governance, staking, and the EVM institutional rows) where the chain supports proofs; none for NFTs or non-EVM chains. **Costs 6 credits** instead of 3, or 3 if no proof could be delivered, and reveals raw on-chain balances. Only opt in if the consumer explicitly needs the raw balances.
+EIP-1186 proofs on every EVM token check (stablecoins, governance, staking, the EVM institutional rows, tokenized treasuries, stablecoin deposits and wrapped bitcoin) where the chain supports proofs; none for NFTs, names or non-EVM chains, and none for rows whose balance is computed rather than stored (Aave aTokens, BUIDL), which are declined at once with a reason. **Costs 6 credits** instead of 3; the premium is refunded whenever no proof could be delivered. Proofs reveal raw on-chain balances. Only opt in if the consumer explicitly needs the raw balances.
 
 ## When to use trust profile vs. custom attest
 
