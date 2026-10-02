@@ -147,7 +147,7 @@ The skills also show `GET https://api.insumermodel.com/v1/credits` (balance chec
 - **Public JWKS**: <https://insumermodel.com/.well-known/jwks.json>
 - **Developer docs**: <https://insumermodel.com/developers/api-reference/>
 - **Pricing & paid tiers**: <https://insumermodel.com/developers/account/>
-- **MCP server (alternative agent surface)**: [`mcp-server-insumer`](https://github.com/douglasborthwick-crypto/mcp-server-insumer)
+- **MCP server (alternative agent surface)**: [`mcp-server-insumer`](https://github.com/insumerapi/mcp-server-insumer)
 
 ## License
 
