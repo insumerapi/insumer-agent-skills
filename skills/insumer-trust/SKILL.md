@@ -132,7 +132,7 @@ curl -X POST https://api.insumermodel.com/v1/trust \
   -d '{
     "wallet": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
     "solanaWallet": "5xY...solanaAddress",
-    "xrplWallet": "rN7n3473SaZBCG4dFL83w7p1W9cgPJqKro",
+    "xrplWallet": "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
     "bitcoinWallet": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"
   }'
 ```
@@ -190,6 +190,8 @@ python scripts/trust.py --wallet 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
 | `401` | Missing/invalid API key | See `insumer-auth` |
 | `402` | Out of credits | Top up via Path 4 in `insumer-auth` |
 | `503` | Upstream blockchain data source unavailable | Retryable; no credits charged |
+
+A `503` carries error code `rpc_failure`. It means a read did not complete and nothing was signed. It is never a `false`: do not report it as a check that was not held. Retry the call.
 
 ## Related skills
 

@@ -42,7 +42,7 @@ Check whether the wallet owns at least one NFT in a collection.
 
 | Field | Required | Notes |
 |---|---|---|
-| `contractAddress` | yes | NFT contract address (ERC-721 or ERC-1155 on EVM, NFToken issuer on XRPL). 0x + 40 hex on EVM; `"native"` is a `400` here (use `token_balance` for the native coin). |
+| `contractAddress` | yes | NFT contract address (ERC-721 style on EVM, NFToken issuer on XRPL). 0x + 40 hex on EVM; `"native"` is a `400` here (use `token_balance` for the native coin). |
 | `chainId` | yes | |
 | `taxon` | XRPL only | Filter by issuer + taxon (optional, NFToken filtering on XRPL) |
 | `label` | recommended | |

@@ -155,7 +155,7 @@ curl -X POST https://api.insumermodel.com/v1/attest \
   -H "X-API-Key: $INSUMER_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "xrplWallet": "rN7n3473SaZBCG4dFL83w7p1W9cgPJqKro",
+    "xrplWallet": "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
     "conditions": [
       {
         "type": "token_balance",
@@ -199,6 +199,8 @@ echo '{"wallet":"0x...","conditions":[{"type":"token_balance",...}]}' | python s
 | `401` | Missing or invalid API key | See `insumer-auth` skill |
 | `402` | Out of verification credits | Top up via Path 4 in `insumer-auth`, only after the user approves the payment |
 | `503` | Upstream blockchain data source unavailable | Retryable after a short delay; no credits charged |
+
+A `503` carries error code `rpc_failure`. It means a read did not complete and nothing was signed. It is never a `false`: do not report it as a condition that was not met. Retry the call.
 
 ## Related skills
 

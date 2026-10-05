@@ -129,7 +129,7 @@ curl -X POST https://api.insumermodel.com/v1/trust/batch \
       },
       {
         "wallet": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-        "xrplWallet": "rN7n3473SaZBCG4dFL83w7p1W9cgPJqKro",
+        "xrplWallet": "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
         "bitcoinWallet": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"
       }
     ]
@@ -192,7 +192,7 @@ For per-wallet cross-chain coverage, edit the script's `--wallets-file` to use J
 | `402` | Insufficient credits for entire batch | Top up via Path 4 in `insumer-auth` |
 | `429` | Rate limit exceeded | Slow down; check tier limits |
 
-The batch endpoint does not answer `503` for an upstream data-source failure. A wallet whose chain reads fail is refused on its own: it appears as an `{error: {wallet, message}}` entry in `data.results[]` of a `200` response, is never signed, and does not consume credits. Retry those wallets later.
+The batch endpoint does not answer `503` for an upstream data-source failure. A wallet whose chain reads fail is refused on its own: it appears as an `{error: {wallet, message}}` entry in `data.results[]` of a `200` response, is never signed, and does not consume credits. Such an entry is never a `false`: it says the wallet was not read, not that it holds nothing. Retry those wallets later.
 
 ## Related skills
 
