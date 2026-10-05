@@ -19,7 +19,7 @@ A store lists the tokens and NFTs it recognizes and the discount each earns. Ins
 
 **Two routes, the store sets the terms.**
 
-- **Proven wallet:** the caller sends `walletProof`, a message signed by the wallet. The wallet gets the store's full discount, with no daily limit.
+- **Proven wallet:** the caller sends `walletProof`, a message signed by the wallet. The wallet gets the full discount its holdings earn (under the store's tiers and cap), without the unproven-wallet daily limit.
 - **Unproven wallet:** no proof. The store decides what that gets: the same discount (the default), up to a lower percentage, or nothing, and optionally a daily limit per wallet.
 
 Read the terms first, then decide whether signing is worth it.
@@ -140,7 +140,7 @@ python scripts/discount.py --merchant acme-store --wallet 0xd8dA...6045 --create
 | `401` | Missing API key, or a `walletProof` that was refused | See `insumer-auth`; re-sign a fresh message |
 | `402` | The merchant has no credits left | Nothing the caller can do; tell the user |
 | `403` | The merchant has not enabled app access | Nothing the caller can do |
-| `429` | The key's daily limit, or the store's daily limit for an unproven wallet | Prove the wallet (no daily limit), or try tomorrow |
+| `429` | The key's daily limit, or the store's daily limit for an unproven wallet | Prove the wallet (the store's limit does not apply), or try tomorrow |
 | `503` | A read did not complete (`rpc_failure`) | Retry after a short delay; no credit used |
 
 A `503` with `rpc_failure` is never "not eligible". Retry the call.
