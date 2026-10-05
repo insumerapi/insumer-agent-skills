@@ -30,6 +30,7 @@ OAuth proves who the user is. **Wallet auth proves what the wallet holds.** Insu
 | [insumer-trust](skills/insumer-trust/) | Curated wallet trust profile, 145 base checks across 27 chains (`/v1/trust`) | 0.2.0 |
 | [insumer-trust-batch](skills/insumer-trust-batch/) | Batch trust profiles for multiple wallets (`/v1/trust/batch`) | 0.2.0 |
 | [insumer-jwks-verify](skills/insumer-jwks-verify/) | Offline ES256 verification of signed responses (raw `sig` or JWT) against the public JWKS | 0.2.0 |
+| [insumer-discount](skills/insumer-discount/) | Token-holder discounts at InsumerAPI merchants: read the store's terms, prove the wallet if it pays, create a signed code (`/v1/verify`) | 0.1.0 |
 
 ---
 
@@ -131,8 +132,10 @@ The skills are instructions plus small helper scripts. There are no hooks, no MC
 | `insumer-trust/scripts/trust.py` | `POST https://api.insumermodel.com/v1/trust` | `INSUMER_API_KEY`, the wallet addresses you pass, and optional `proof: "merkle"` |
 | `insumer-trust-batch/scripts/trust_batch.py` | `POST https://api.insumermodel.com/v1/trust/batch` | `INSUMER_API_KEY`, the wallet addresses you pass, and optional `proof: "merkle"` |
 | `insumer-jwks-verify/scripts/verify.py` | `GET https://insumermodel.com/.well-known/jwks.json` | Nothing; it fetches the public keys and verifies locally |
+| `insumer-discount/scripts/proof_message.py` | Nothing | Nothing; it prints a message for the wallet to sign. It never signs and never handles a key |
+| `insumer-discount/scripts/discount.py` | `GET https://api.insumermodel.com/v1/merchants/{id}`, `GET .../v1/discount/check`, and with `--create`, `POST .../v1/verify` | The merchant ID and wallet address you pass; with `--create`, also `INSUMER_API_KEY` and the signed proof you pass in `--proof-file` |
 
-The only credential is `INSUMER_API_KEY`, read from the environment and sent only to `api.insumermodel.com` in the `X-API-Key` header. No script signs or sends a transaction or holds a private key. None reads any other environment variable (beyond the standard proxy variables Python's HTTP client honors) or any file except a request or wallet list you pass on the command line (`--body-file`, `--wallets-file`) or on stdin.
+The only credential is `INSUMER_API_KEY`, read from the environment and sent only to `api.insumermodel.com` in the `X-API-Key` header. No script signs or sends a transaction or holds a private key. None reads any other environment variable (beyond the standard proxy variables Python's HTTP client honors) or any file except a request, wallet list or signed proof you pass on the command line (`--body-file`, `--wallets-file`, `--proof-file`) or on stdin.
 
 `create_key.py` and `buy_key.py` send `appName: "insumer-agent-skills"` by default, a label on the key that tells InsumerAPI which channel it came from. Pass `--app-name` to use your own; nothing else is collected.
 
