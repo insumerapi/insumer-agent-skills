@@ -60,7 +60,7 @@ For these chains, use the dedicated wallet field (not `wallet`) and pass the cha
 ### XRPL specifics
 
 - XRP balance: `contractAddress: "native"`
-- Trust line tokens (RLUSD, USDC on XRPL): `contractAddress` is the issuer r-address, plus `currency` field (e.g. `"RLUSD"`, `"USDC"`, or any 3-char code)
+- Trust line tokens (RLUSD, USDC on XRPL): `contractAddress` is the issuer r-address, plus `currency` field (e.g. `"RLUSD"`, `"USDC"`, or any 3-char code). Currency codes are case-sensitive: send the code exactly as the issuer created it (`USD` and `usd` are different currencies). `XRP` is the native coin and is not accepted as a currency: use `contractAddress: "native"`
 - 3-char currency codes pass through as-is; longer names (e.g. `"RLUSD"`) are auto hex-encoded to the 40-char XRPL canonical format
 - NFTokens use `taxon` field for issuer + taxon filtering
 

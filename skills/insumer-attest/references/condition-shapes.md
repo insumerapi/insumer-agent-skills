@@ -22,7 +22,7 @@ Threshold check on a fungible token balance.
 | `chainId` | yes | Numeric for EVM, `"solana"`/`"xrpl"`/`"bitcoin"`/`"tron"`/`"stellar"`/`"sui"` for non-EVM |
 | `threshold` | yes | Minimum balance in **human units**, as a **decimal string** (`"100"`, `"0.000001"` — not a JSON number). Keys signing with `kid: insumer-attest-v2` (created from 2026-06-10) reject a number with a `400`; a string is accepted by v1 and v2 alike. Must be `> 0` (use `"0.000001"` for prove-any-balance). |
 | `decimals` | optional | Cross-check only; leave it out. The token's own decimals are always read from the chain. If sent, a value that differs from the token's own decimals is rejected with a `400`. |
-| `currency` | XRPL only | Trust line currency code (e.g. `"RLUSD"`, `"USDC"`) |
+| `currency` | XRPL only | Trust line currency code (e.g. `"RLUSD"`, `"USDC"`). Case-sensitive: send it exactly as issued |
 | `label` | recommended | Human-readable label (max 100 chars) |
 
 Operator: `gte` (>=).
