@@ -7,7 +7,7 @@ description: >
   airdrop or allowlist with InsumerAPI). Each wallet's profile is independently
   signed; the response supports partial success.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   author: InsumerAPI
 ---
 
@@ -180,6 +180,8 @@ Cost: up to `successful_wallets * 6` credits; a wallet whose profile carried no 
 ```bash
 python scripts/trust_batch.py --wallets-file allowlist.txt
 ```
+
+The script prints a summary per wallet (profile ID, held / not held / not evaluated counts, and the checks held in each dimension) and saves the complete signed response to a JSON file named in the summary; `--out PATH` chooses the file. Read the summary to answer the user, and verify each entry of `data.results` in the saved file on the raw `sig` path (for example `verify_trust_profile` from the `insumer-verify` package, or the raw-sig instructions in `insumer-jwks-verify`). The script never overwrites a file; if it cannot save one, it prints the complete response instead, so a paid call is never lost. A full profile is tens of thousands of characters, so ten printed in full are more than an agent can read at once; `--full` prints the complete response anyway. Profiles cannot be fetched again, so keep the saved file rather than calling a second time.
 
 For per-wallet cross-chain coverage, edit the script's `--wallets-file` to use JSON-line format (one object per line) or call the API directly with curl.
 

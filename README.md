@@ -28,7 +28,7 @@ OAuth proves who the user is. **Wallet auth proves what the wallet holds.** Insu
 | [insumer-auth](skills/insumer-auth/) | Free API key creation, env var setup, credit balance | 0.2.0 |
 | [insumer-attest](skills/insumer-attest/) | Custom condition attestation across 37 chains (`/v1/attest`) | 0.2.0 |
 | [insumer-trust](skills/insumer-trust/) | Curated wallet trust profile, 145 base checks across 27 chains (`/v1/trust`) | 0.2.0 |
-| [insumer-trust-batch](skills/insumer-trust-batch/) | Batch trust profiles for multiple wallets (`/v1/trust/batch`) | 0.2.0 |
+| [insumer-trust-batch](skills/insumer-trust-batch/) | Batch trust profiles for multiple wallets (`/v1/trust/batch`) | 0.3.0 |
 | [insumer-jwks-verify](skills/insumer-jwks-verify/) | Offline ES256 verification of signed responses (raw `sig` or JWT) against the public JWKS | 0.2.0 |
 | [insumer-discount](skills/insumer-discount/) | Token-holder discounts at InsumerAPI merchants: read the store's terms, prove the wallet if it pays, create a signed code (`/v1/verify`) | 0.1.0 |
 
@@ -130,7 +130,7 @@ The skills are instructions plus small helper scripts. There are no hooks, no MC
 | `insumer-auth/scripts/buy_credits.py` | `POST https://api.insumermodel.com/v1/credits/buy` | `INSUMER_API_KEY`, plus `txHash`, `chainId`, `amount` unless paying in BTC, optional `updateWallet` |
 | `insumer-attest/scripts/attest.py` | `POST https://api.insumermodel.com/v1/attest` | `INSUMER_API_KEY` and the request body you provide |
 | `insumer-trust/scripts/trust.py` | `POST https://api.insumermodel.com/v1/trust` | `INSUMER_API_KEY`, the wallet addresses you pass, and optional `proof: "merkle"` |
-| `insumer-trust-batch/scripts/trust_batch.py` | `POST https://api.insumermodel.com/v1/trust/batch` | `INSUMER_API_KEY`, the wallet addresses you pass, and optional `proof: "merkle"` |
+| `insumer-trust-batch/scripts/trust_batch.py` | `POST https://api.insumermodel.com/v1/trust/batch` | `INSUMER_API_KEY`, the wallet addresses you pass, and optional `proof: "merkle"`. Unless `--full` is given, it also saves the signed response to a local JSON file (`--out`, default `trust_batch_<time>.json` in the working directory) |
 | `insumer-jwks-verify/scripts/verify.py` | `GET https://insumermodel.com/.well-known/jwks.json` | Nothing; it fetches the public keys and verifies locally |
 | `insumer-discount/scripts/proof_message.py` | Nothing | Nothing; it prints a message for the wallet to sign. It never signs and never handles a key |
 | `insumer-discount/scripts/discount.py` | `GET https://api.insumermodel.com/v1/merchants/{id}`, `GET .../v1/discount/check`, and with `--create`, `POST .../v1/verify` | The merchant ID and wallet address you pass; with `--create`, also `INSUMER_API_KEY` and the signed proof you pass in `--proof-file` |
