@@ -6,7 +6,7 @@ By default: reads the store's terms (walletTerms) and runs the free discount
 check for the wallet. Nothing is spent.
 
 With --create: creates a signed single-use code with POST /v1/verify, which
-uses one of the merchant's credits. Add --proof-file with the walletProof JSON
+uses a credit from the API key that owns the store. Add --proof-file with the walletProof JSON
 (from proof_message.py) for the proven route. Reads INSUMER_API_KEY from env.
 
 Examples:
@@ -49,7 +49,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Token-holder discount at an InsumerAPI merchant")
     parser.add_argument("--merchant", required=True, help="Merchant ID")
     parser.add_argument("--wallet", required=True, help="EVM wallet address (0x...)")
-    parser.add_argument("--create", action="store_true", help="Create the code (uses a merchant credit)")
+    parser.add_argument("--create", action="store_true", help="Create the code (uses a credit from the store owner's key)")
     parser.add_argument("--proof-file", help="walletProof JSON for the proven route")
     args = parser.parse_args()
 

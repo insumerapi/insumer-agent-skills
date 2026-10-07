@@ -110,7 +110,7 @@ Leave out `walletProof` for the unproven route. The response carries `code`, `to
 
 When emitting integration code for this flow, the agent MUST:
 
-1. **Read the terms or run the free check before creating a code.** Creating a code spends a merchant credit even when the wallet qualifies for nothing.
+1. **Read the terms or run the free check before creating a code.** Creating a code that carries a discount spends a credit from the API key that owns the store; a 0% result is free.
 2. **Never hold the user's private key to sign for them.** The wallet's owner signs, in their own wallet. An agent signs only with a wallet it controls itself.
 3. **Build a fresh message for every request.** A nonce is accepted once, and a message older than 5 minutes is refused.
 4. **Send the proof with `wallet` only.** A proof sent with `solanaWallet` or `xrplWallet` is a `400`.
