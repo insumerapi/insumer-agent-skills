@@ -82,12 +82,11 @@ def summarize(payload: dict, saved_to: str):
     meta = payload.get("meta") if isinstance(payload.get("meta"), dict) else {}
     signed = sum(1 for e in results if isinstance(e, dict) and _signed(e))
     requested = _int(counts.get("requested"))
-    succeeded = _int(counts.get("succeeded"))
-    failed = _int(counts.get("failed"))
+    # Signed means a profile with a signature and a kid, whatever the API's own success count says.
     out = [
         f"Batch trust profiles: {len(results) if requested is None else requested} requested, "
-        f"{signed if succeeded is None else succeeded} signed, "
-        f"{len(results) - signed if failed is None else failed} not signed. "
+        f"{signed} signed, "
+        f"{len(results) - signed} not signed. "
         f"Credits charged: {_s(meta.get('creditsCharged'))}.",
         f"This is a summary. The complete signed response (each profile with sig, kid, pqSig and pqKid, unchanged) "
         f"is saved in {saved_to}. Verify each entry of data.results there against the InsumerAPI JWKS on the raw "

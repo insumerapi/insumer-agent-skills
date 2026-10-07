@@ -7,7 +7,7 @@ description: >
   airdrop or allowlist with InsumerAPI). Each wallet's profile is independently
   signed; the response supports partial success.
 metadata:
-  version: "0.4.0"
+  version: "0.4.1"
   author: InsumerAPI
 ---
 
