@@ -26,9 +26,9 @@ OAuth proves who the user is. **Wallet auth proves what the wallet holds.** Insu
 | Skill | What it does | Version |
 | ----- | ------------ | ------- |
 | [insumer-auth](skills/insumer-auth/) | Free API key creation, env var setup, credit balance | 0.2.0 |
-| [insumer-attest](skills/insumer-attest/) | Custom condition attestation across 37 chains (`/v1/attest`) | 0.2.0 |
-| [insumer-trust](skills/insumer-trust/) | Curated wallet trust profile, 145 base checks across 27 chains (`/v1/trust`) | 0.2.0 |
-| [insumer-trust-batch](skills/insumer-trust-batch/) | Batch trust profiles for multiple wallets (`/v1/trust/batch`) | 0.3.0 |
+| [insumer-attest](skills/insumer-attest/) | Custom condition attestation across 37 chains, ten condition types (`/v1/attest`) | 0.3.0 |
+| [insumer-trust](skills/insumer-trust/) | Curated wallet trust profile, 155 base checks across 27 chains in 10 dimensions (`/v1/trust`) | 0.3.0 |
+| [insumer-trust-batch](skills/insumer-trust-batch/) | Batch trust profiles for multiple wallets (`/v1/trust/batch`) | 0.4.0 |
 | [insumer-jwks-verify](skills/insumer-jwks-verify/) | Offline ES256 verification of signed responses (raw `sig` or JWT) against the public JWKS | 0.2.0 |
 | [insumer-discount](skills/insumer-discount/) | Token-holder discounts at InsumerAPI merchants: read the store's terms, prove the wallet if it pays, create a signed code (`/v1/verify`) | 0.1.0 |
 

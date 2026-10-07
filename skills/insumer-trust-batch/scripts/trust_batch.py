@@ -15,6 +15,9 @@ Output:
     By default the script prints a short summary per wallet (profile ID, held /
     not held / not evaluated counts, and the checks held in each dimension) and
     writes the complete signed response to a JSON file, named in the summary.
+    Dimensions print in a fixed order (the base dimensions stablecoins through
+    names, then account, then solana, xrpl, bitcoin, tron where present); the
+    account dimension's checks read "present" rather than "held".
     A full profile is tens of thousands of characters, so ten of them are more
     than an agent can read at once; the file keeps every signed profile intact
     for verification. --out PATH chooses the file. --full prints the complete
@@ -37,6 +40,23 @@ import urllib.error
 
 ENDPOINT = "https://api.insumermodel.com/v1/trust/batch"
 MAX_WALLETS = 10
+
+# The order the dimensions print in, the same for every wallet: the base
+# dimensions first, then the optional wallet dimensions, then anything else
+# alphabetically.
+BASE_DIMENSIONS = (
+    "stablecoins", "governance", "nfts", "staking", "institutional_stablecoins",
+    "tokenized_treasuries", "stablecoin_deposits", "wrapped_bitcoin", "names", "account",
+)
+OPTIONAL_DIMENSIONS = ("solana", "xrpl", "bitcoin", "tron")
+# Dimensions whose checks are states at the wallet address rather than holdings.
+PRESENCE_DIMENSIONS = ("account",)
+
+
+def _ordered_dimensions(dims: dict) -> list:
+    """Return the dimension names of a profile in the fixed print order."""
+    fixed = [n for n in BASE_DIMENSIONS + OPTIONAL_DIMENSIONS if n in dims]
+    return fixed + sorted(n for n in dims if n not in fixed)
 
 
 def _s(value) -> str:
@@ -73,7 +93,8 @@ def summarize(payload: dict, saved_to: str):
         f"is saved in {saved_to}. Verify each entry of data.results there against the InsumerAPI JWKS on the raw "
         f"sig path, for example with verify_trust_profile from the insumer-verify package. "
         f"Profiles cannot be fetched again: a new call signs fresh profiles and is charged again.",
-        "Every check is held or not held, never a balance. The counts are facts about the wallet, not a score.",
+        "Every check is held or not held (present or not present for the account dimension), never a balance. "
+        "The counts are facts about the wallet, not a score.",
         "",
     ]
     for i, entry in enumerate(results, start=1):
@@ -91,14 +112,16 @@ def summarize(payload: dict, saved_to: str):
             out.append(f"   {_s(s.get('totalChecks'))} checks: {_s(s.get('totalPassed'))} held, "
                        f"{_s(s.get('totalFailed'))} not held, {_s(s.get('totalNotEvaluated'))} not evaluated")
             dims = trust.get("dimensions") if isinstance(trust.get("dimensions"), dict) else {}
-            for name, dim in dims.items():
+            for name in _ordered_dimensions(dims):
+                dim = dims[name]
                 if not isinstance(dim, dict):
                     continue
                 checks = [c for c in dim.get("checks") if isinstance(c, dict)] if isinstance(dim.get("checks"), list) else []
                 held = [_s(c.get("label")) for c in checks if c.get("met") is True]
                 not_eval = sum(1 for c in checks if c.get("evaluated") is False)
                 total = _int(dim.get("total"))
-                line = f"   {name}: {len(held)} of {len(checks) if total is None else total} held"
+                word = "present" if name in PRESENCE_DIMENSIONS else "held"
+                line = f"   {name}: {len(held)} of {len(checks) if total is None else total} {word}"
                 if not_eval:
                     line += f" ({not_eval} not evaluated)"
                 if held:
@@ -214,7 +237,10 @@ def main() -> int:
         return 1
 
     if args.full:
-        print(json.dumps(payload, indent=2))
+        try:
+            print(json.dumps(json.loads(raw.decode("utf-8")), indent=2))
+        except ValueError:
+            sys.stdout.write(raw.decode("utf-8", errors="replace"))
         return 0
 
     # The call has been paid for: whatever happens below, the response is either

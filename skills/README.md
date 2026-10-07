@@ -7,9 +7,9 @@ Agent skills for [InsumerAPI](https://insumermodel.com): wallet auth and conditi
 | Skill | Description | Version | Author |
 | ----- | ----------- | ------- | ------ |
 | [insumer-auth](insumer-auth/) | Free API key creation, env var setup, credit balance | 0.2.0 | InsumerAPI |
-| [insumer-attest](insumer-attest/) | Custom condition attestation (`/v1/attest`) | 0.2.0 | InsumerAPI |
-| [insumer-trust](insumer-trust/) | Curated wallet trust profile (`/v1/trust`) | 0.2.0 | InsumerAPI |
-| [insumer-trust-batch](insumer-trust-batch/) | Batch trust profiles (`/v1/trust/batch`) | 0.3.0 | InsumerAPI |
+| [insumer-attest](insumer-attest/) | Custom condition attestation, ten condition types (`/v1/attest`) | 0.3.0 | InsumerAPI |
+| [insumer-trust](insumer-trust/) | Curated wallet trust profile, 155 base checks in 10 dimensions (`/v1/trust`) | 0.3.0 | InsumerAPI |
+| [insumer-trust-batch](insumer-trust-batch/) | Batch trust profiles (`/v1/trust/batch`) | 0.4.0 | InsumerAPI |
 | [insumer-jwks-verify](insumer-jwks-verify/) | Offline ES256 verification against the public JWKS | 0.2.0 | InsumerAPI |
 | [insumer-discount](insumer-discount/) | Token-holder discounts: store terms, optional wallet proof, signed code (`/v1/verify`) | 0.1.0 | InsumerAPI |
 

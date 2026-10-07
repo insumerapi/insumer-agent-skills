@@ -7,13 +7,13 @@ description: >
   airdrop or allowlist with InsumerAPI). Each wallet's profile is independently
   signed; the response supports partial success.
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   author: InsumerAPI
 ---
 
 # InsumerAPI Batch Wallet Trust Profile
 
-Same curated condition-based access bundle as `insumer-trust`, but accepts up to **10 wallets** in one request. Each wallet's profile is independently signed; the response supports partial success — failures for one wallet don't fail the rest.
+Same curated condition-based access bundle as `insumer-trust` (155 base checks across 27 chains in 10 dimensions, up to 176 checks across 29 chains in 14 dimensions with the optional wallets; `conditionSetVersion` `"2026-10-08"`), but accepts up to **10 wallets** in one request. Each wallet's profile is independently signed; the response supports partial success — failures for one wallet don't fail the rest.
 
 Each wallet's profile is signed once, as a whole, by InsumerAPI (`kid: insumer-trust-v2`, with the post-quantum companion). There are no per-dimension signatures and no signature over the batch. **Do not add an orchestrator wrap:** carry each signed profile exactly as issued.
 
@@ -37,11 +37,11 @@ export INSUMER_API_KEY='insr_live_...'
 ```json
 {
   "wallets": [
-    { "wallet": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" },
     {
-      "wallet": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
-      "solanaWallet": "5v9CXTpN3WHbM2jAYty88qDGz7P4yuMv8fnuPRXBPmiB"
-    }
+      "wallet": "0x1601843c5E9bC251A3272907010AFa41Fa18347E",
+      "solanaWallet": "DXK4yMpigbTSqv33nJk1tJucXB4E3rDmTXn3yZmiFAXt"
+    },
+    { "wallet": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb" }
   ]
 }
 ```
@@ -60,6 +60,8 @@ Top-level `proof: "merkle"` (optional) applies to all wallets in the batch and c
 
 ## Response shape
 
+Abbreviated; the ids and counts are from a real batch of the two wallets above (the first with its Solana wallet, so its profile has 11 dimensions and 169 checks; the second has the 10 base dimensions and 155 checks):
+
 ```json
 {
   "ok": true,
@@ -67,13 +69,13 @@ Top-level `proof: "merkle"` (optional) applies to all wallets in the batch and c
     "results": [
       {
         "trust": {
-          "id": "TRST-A1B2C",
-          "wallet": "0xd8dA...",
-          "conditionSetVersion": "2026-10",
+          "id": "TRST-74167",
+          "wallet": "0x1601843c5E9bC251A3272907010AFa41Fa18347E",
+          "conditionSetVersion": "2026-10-08",
           "dimensions": { ... },
-          "summary": { "totalChecks": 145, "totalPassed": 7, "totalFailed": 131, "totalNotEvaluated": 7, ... },
-          "profiledAt": "2026-...",
-          "expiresAt": "2026-..."
+          "summary": { "totalChecks": 169, "totalPassed": 17, "totalFailed": 147, "totalNotEvaluated": 5, "dimensionsWithActivity": 4, "dimensionsChecked": 11 },
+          "profiledAt": "2026-10-07T21:53:03.720Z",
+          "expiresAt": "2026-10-07T22:23:03.720Z"
         },
         "sig": "...",
         "kid": "insumer-trust-v2",
@@ -81,7 +83,15 @@ Top-level `proof: "merkle"` (optional) applies to all wallets in the batch and c
         "pqKid": "insumer-trust-pq1"
       },
       {
-        "trust": { "id": "TRST-D4E5F", "wallet": "0xAb58...", ... },
+        "trust": {
+          "id": "TRST-C7EA2",
+          "wallet": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+          "conditionSetVersion": "2026-10-08",
+          "dimensions": { ... },
+          "summary": { "totalChecks": 155, "totalPassed": 30, "totalFailed": 118, "totalNotEvaluated": 7, "dimensionsWithActivity": 7, "dimensionsChecked": 10 },
+          "profiledAt": "2026-10-07T21:53:03.495Z",
+          "expiresAt": "2026-10-07T22:23:03.495Z"
+        },
         "sig": "...",
         "kid": "insumer-trust-v2",
         "pqSig": "...",
@@ -97,7 +107,7 @@ Top-level `proof: "merkle"` (optional) applies to all wallets in the batch and c
 }
 ```
 
-Each entry in `data.results[]` is **either** a `{trust, sig, kid, pqSig, pqKid}` object **or** `{error: { wallet, message }}`. Iterate, branch, and verify each `trust` independently with `insumer-jwks-verify`.
+Each entry in `data.results[]` is **either** a `{trust, sig, kid, pqSig, pqKid}` object **or** `{error: { wallet, message }}`. Iterate, branch, and verify each `trust` independently with `insumer-jwks-verify`. Every profile lists its dimensions in the same fixed order: `stablecoins`, `governance`, `nfts`, `staking`, `institutional_stablecoins`, `tokenized_treasuries`, `stablecoin_deposits`, `wrapped_bitcoin`, `names`, `account`, then whichever of `solana`, `xrpl`, `bitcoin`, `tron` that wallet switched on, in that order. The `account` dimension (10 rows: contract code and EIP-7702 delegation on Ethereum, Base, Arbitrum, Optimism and Polygon) is a presence check on the wallet's own code state; in proof mode its rows carry `proof.available: false` with a reason pointing at `/v1/attest`.
 
 ## Usage
 
@@ -181,7 +191,7 @@ Cost: up to `successful_wallets * 6` credits; a wallet whose profile carried no 
 python scripts/trust_batch.py --wallets-file allowlist.txt
 ```
 
-The script prints a summary per wallet (profile ID, held / not held / not evaluated counts, and the checks held in each dimension) and saves the complete signed response to a JSON file named in the summary; `--out PATH` chooses the file. Read the summary to answer the user, and verify each entry of `data.results` in the saved file on the raw `sig` path (for example `verify_trust_profile` from the `insumer-verify` package, or the raw-sig instructions in `insumer-jwks-verify`). The script never overwrites a file; if it cannot save one, it prints the complete response instead, so a paid call is never lost. A full profile is tens of thousands of characters, so ten printed in full are more than an agent can read at once; `--full` prints the complete response anyway. Profiles cannot be fetched again, so keep the saved file rather than calling a second time.
+The script prints a summary per wallet (profile ID, held / not held / not evaluated counts, and the checks held in each dimension) and saves the complete signed response to a JSON file named in the summary; `--out PATH` chooses the file. The dimensions print in a fixed order, the same for every wallet: the ten base dimensions (`stablecoins` through `names`, then `account`), then `solana`, `xrpl`, `bitcoin`, `tron` where present. The `account` dimension reads "present" rather than "held" (its rows are code states at the wallet address, not holdings): for example `account: 5 of 10 present: Contract code on Ethereum, Contract code on Base, ...`. Read the summary to answer the user, and verify each entry of `data.results` in the saved file on the raw `sig` path (for example `verify_trust_profile` from the `insumer-verify` package, or the raw-sig instructions in `insumer-jwks-verify`). The script never overwrites a file; if it cannot save one, it prints the complete response instead, so a paid call is never lost. A full profile is tens of thousands of characters, so ten printed in full are more than an agent can read at once; `--full` prints the complete response anyway. Profiles cannot be fetched again, so keep the saved file rather than calling a second time.
 
 For per-wallet cross-chain coverage, edit the script's `--wallets-file` to use JSON-line format (one object per line) or call the API directly with curl.
 

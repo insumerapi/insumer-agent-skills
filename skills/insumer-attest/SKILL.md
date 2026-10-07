@@ -9,7 +9,7 @@ description: >
   holds with InsumerAPI, or to compose an InsumerAPI wallet_state signal in a
   multi-issuer trust envelope. Read, evaluate, sign, in one call.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   author: InsumerAPI
 ---
 
@@ -33,9 +33,9 @@ Wallet auth is the OAuth-equivalent for what a wallet holds. The pattern is **re
 
 - Single-call attestation across 37 chains: 31 EVM, Solana, XRPL, Bitcoin, Tron, Stellar, Sui
 - Up to 10 conditions per request — overall `pass` is `true` only if every condition is `true`
-- Nine condition types: `token_balance`, `nft_ownership` (33 of 37 chains: EVM + Solana + XRPL), `eas_attestation` (Ethereum, Optimism, Polygon, Base, Arbitrum), `farcaster_id`, `evm_view_call` (single-address-argument view function returning bool; `selector` required, EVM chains only), `ratio_to_amount`, `ratio_to_supply`, `erc8004_agent` (Base; `agentId` required), `erc7710_delegation` (Base; `delegationManager`, `expectedDelegator`, `delegation` required; max 3 per call, 5-minute expiry)
+- Ten condition types: `token_balance`, `nft_ownership` (33 of 37 chains: EVM + Solana + XRPL), `eas_attestation` (Ethereum, Optimism, Polygon, Base, Arbitrum), `farcaster_id`, `evm_view_call` (single-address-argument view function returning bool; `selector` required, EVM chains only), `ratio_to_amount`, `ratio_to_supply`, `erc8004_agent` (Base; `agentId` required), `erc7710_delegation` (Base; `delegationManager`, `expectedDelegator`, `delegation` required; max 3 per call, 5-minute expiry), `account_code` (EVM chains only; `expect` required: `"none"` for a plain key account with no code, `"eip7702"` for an EIP-7702 delegation designator, `"contract"` for any other code; optional `delegate`, only with `"eip7702"`, met only when the designator points at that address; a non-EVM `chainId` or a `delegate` with another `expect` is a `400`)
 - ES256 signature on every response, with optional ES256 JWT (`format: "jwt"`) for standard JWT-library verification
-- Optional EIP-1186 Merkle storage proofs (`proof: "merkle"`) on token_balance conditions for 27 of the 31 EVM chains (not ZKsync Era, Sei, Viction or XDC Network, nor any non-EVM chain), plus revocation-slot proofs for erc7710_delegation on the verified v1.3.0 manager
+- Optional EIP-1186 Merkle proofs (`proof: "merkle"`) for 27 of the 31 EVM chains (not ZKsync Era, Sei, Viction or XDC Network, nor any non-EVM chain): storage proofs on token_balance conditions, account proofs (`subject: "account_code"`) on account_code conditions, plus revocation-slot proofs for erc7710_delegation on the verified v1.3.0 manager
 - 30-minute attestation TTL, 5 minutes when the request includes an `erc7710_delegation` condition (`expiresAt` in response)
 
 ## Setup
@@ -148,7 +148,25 @@ curl -X POST https://api.insumermodel.com/v1/attest \
 
 `proof: "merkle"` returns EIP-1186 storage proofs alongside the boolean and **costs 2 credits instead of 1** (1 if no proof could be delivered). **Note**: Merkle mode reveals the raw on-chain balance to the caller — standard mode does not. Only opt in if the consumer needs the raw balance.
 
-### Example 6: XRPL trust line
+Proof subjects are three: `account_balance`, `account_code` and `delegation_revocation`, plus the subject-less ERC-20 slot proof. An `account_code` condition in proof mode carries an EIP-1186 account proof with `subject: "account_code"` and the fields `blockNumber`, `nonce`, `balance`, `storageHash`, `codeHash`, `accountProof`. `codeHash` is the proven value: keccak256 of empty code (`0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470`) means no code; keccak256 of `0xef0100` followed by the 20-byte target means an EIP-7702 delegation to that target (checkable only with the `delegate` the verifier supplies); anything else means contract code. An account absent from the state trie may report all zeros, which also means no code. Standard mode never returns the code or the delegation target, only `met`.
+
+### Example 6: Account code state
+
+```bash
+curl -X POST https://api.insumermodel.com/v1/attest \
+  -H "X-API-Key: $INSUMER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "wallet": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "conditions": [
+      { "type": "account_code", "chainId": 8453, "expect": "eip7702" }
+    ]
+  }'
+```
+
+Returns `met: true` for this wallet on Base (it carries an EIP-7702 delegation designator there). The signed `evaluatedCondition` is `{"type":"account_code","chainId":8453,"expect":"eip7702","operator":"code_state"}`. Add `"delegate": "0x…"` to require a specific delegation target; it is echoed, lowercase, inside the signed `evaluatedCondition`. See `references/condition-shapes.md`.
+
+### Example 7: XRPL trust line
 
 ```bash
 curl -X POST https://api.insumermodel.com/v1/attest \
