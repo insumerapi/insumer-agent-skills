@@ -53,6 +53,20 @@ OPTIONAL_DIMENSIONS = ("solana", "xrpl", "bitcoin", "tron")
 PRESENCE_DIMENSIONS = ("account",)
 
 
+def _held_line(summary: dict, dims: dict) -> str:
+    """Asset rows held, with the account dimension's facts counted beside them, never added.
+
+    A profile without an account dimension keeps the plain count.
+    """
+    account = dims.get("account") if isinstance(dims.get("account"), dict) else None
+    present = account.get("passCount") if account else None
+    total_passed = summary.get("totalPassed")
+    ok = lambda v: isinstance(v, int) and not isinstance(v, bool)
+    if not ok(present) or not ok(total_passed) or total_passed < present:
+        return f"{_s(total_passed)} held"
+    return f"{total_passed - present} assets held, {present} account facts present"
+
+
 def _ordered_dimensions(dims: dict) -> list:
     """Return the dimension names of a profile in the fixed print order."""
     fixed = [n for n in BASE_DIMENSIONS + OPTIONAL_DIMENSIONS if n in dims]
@@ -93,7 +107,7 @@ def summarize(payload: dict, saved_to: str):
         f"sig path, for example with verify_trust_profile from the insumer-verify package. "
         f"Profiles cannot be fetched again: a new call signs fresh profiles and is charged again.",
         "Every check is held or not held (present or not present for the account dimension), never a balance. "
-        "The counts are facts about the wallet, not a score.",
+        "The counts are facts about the wallet, not a score; the account facts are counted beside the assets, never added to them.",
         "",
     ]
     for i, entry in enumerate(results, start=1):
@@ -108,9 +122,9 @@ def summarize(payload: dict, saved_to: str):
                 signature = "returned without a signature: do not rely on it"
             out.append(f"{i}. {_s(trust.get('wallet'))} · {_s(trust.get('id'))} · check set "
                        f"{_s(trust.get('conditionSetVersion'))} · expires {_s(trust.get('expiresAt'))} · {signature}")
-            out.append(f"   {_s(s.get('totalChecks'))} checks: {_s(s.get('totalPassed'))} held, "
-                       f"{_s(s.get('totalFailed'))} not held, {_s(s.get('totalNotEvaluated'))} not evaluated")
             dims = trust.get("dimensions") if isinstance(trust.get("dimensions"), dict) else {}
+            out.append(f"   {_s(s.get('totalChecks'))} checks: {_held_line(s, dims)}, "
+                       f"{_s(s.get('totalFailed'))} not held, {_s(s.get('totalNotEvaluated'))} not evaluated")
             for name in _ordered_dimensions(dims):
                 dim = dims[name]
                 if not isinstance(dim, dict):
