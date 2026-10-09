@@ -15,9 +15,9 @@
 
 OAuth proves who the user is. **Wallet auth proves what the wallet holds.** InsumerAPI evaluates a wallet's on-chain state against a condition and returns an ES256-signed, JWKS-verifiable boolean. The pattern is **read → evaluate → sign**:
 
-1. **Read** — InsumerAPI reads the wallet's on-chain state on the requested chain
-2. **Evaluate** — wallet state is checked against the condition
-3. **Sign** — a boolean result is returned, ES256-signed, with a `conditionHash` for tamper detection
+1. **Read**: InsumerAPI reads the wallet's on-chain state on the requested chain
+2. **Evaluate**: wallet state is checked against the condition
+3. **Sign**: a boolean result is returned, ES256-signed, with a `conditionHash` for tamper detection
 
 **No secrets. No identity-first. No static credentials.** Token gating is one form of condition-based access; this is the general primitive.
 
@@ -74,7 +74,7 @@ Restart your agent. The skills activate when you ask about InsumerAPI: getting a
 
 ## First use (60 seconds)
 
-1. **Get a free API key** (10 free verifications plus 100 reads/day, no signup beyond an email):
+1. **Get a free API key** (10 free verifications plus 100 requests a day, no signup beyond an email):
 
    ```bash
    curl -s -X POST https://api.insumermodel.com/v1/keys/create \
@@ -90,24 +90,24 @@ Restart your agent. The skills activate when you ask about InsumerAPI: getting a
 
 3. **Ask your agent something that triggers a skill.** Examples:
 
-   - "Add wallet auth to my Express app — gate `/admin` by USDC balance on Base"
+   - "Add wallet auth to my Express app: gate `/admin` by USDC balance on Base"
    - "Check whether wallet `0xabc...def` holds at least 100 USDC on Base"
    - "Show me a wallet trust profile for `0xd8dA...6045`"
    - "Verify this JWT against the InsumerAPI JWKS"
 
-The skill loads the right canonical request shape, the offline verification recipe, and the failure-mode guardrails — your agent emits working integration code on the first try.
+The skill loads the right canonical request shape, the offline verification recipe, and the failure-mode guardrails, so your agent emits working integration code on the first try.
 
 ---
 
 ## Why these skills exist
 
-The agent ecosystem already knows how to *call* HTTP APIs. What it doesn't know — and gets wrong — is the InsumerAPI-specific patterns that matter:
+The agent ecosystem already knows how to *call* HTTP APIs. What it doesn't know, and gets wrong, is the InsumerAPI-specific patterns that matter:
 
 - **Boolean, not balance** by construction (standard mode never returns the underlying balance)
 - **Offline ES256 verification** against the public JWKS (the signature is the product, not the JSON body)
 - **`decimals` is a cross-check, never an input** (leave it out: the token's own decimals are read from the chain, and a sent value that differs is rejected with a `400`)
 - **Backend-only key handling** (never expose `insr_live_...` in browser JS)
-- **Read → evaluate → sign** primitive (the whole point — not just an HTTP call)
+- **Read → evaluate → sign** primitive (the whole point, not just an HTTP call)
 
 Each skill encodes these as hard constraints, with reference shapes verified against the live API.
 
@@ -115,7 +115,7 @@ Each skill encodes these as hard constraints, with reference shapes verified aga
 
 ## Compatible agents
 
-These skills work in any [agentskills.io](https://agentskills.io)-compatible agent. The current adopter list includes Claude, Claude Code, Cursor, GitHub Copilot, VS Code, OpenAI Codex, Google Gemini CLI, JetBrains Junie, Sourcegraph Amp, Block Goose, OpenHands, OpenCode, Letta, Roo Code, Mistral Vibe, ByteDance Trae, Snowflake Cortex, Databricks Genie, Spring AI, Kiro, Workshop, Qodo, Factory, Firebender, and others — see [agentskills.io/home](https://agentskills.io/home) for the live list. xAI's Grok Build reads the same `SKILL.md` format (see Option C above).
+These skills work in any [agentskills.io](https://agentskills.io)-compatible agent. The current adopter list includes Claude, Claude Code, Cursor, GitHub Copilot, VS Code, OpenAI Codex, Google Gemini CLI, JetBrains Junie, Sourcegraph Amp, Block Goose, OpenHands, OpenCode, Letta, Roo Code, Mistral Vibe, ByteDance Trae, Snowflake Cortex, Databricks Genie, Spring AI, Kiro, Workshop, Qodo, Factory, Firebender, and others; see [agentskills.io/home](https://agentskills.io/home) for the live list. xAI's Grok Build reads the same `SKILL.md` format (see Option C above).
 
 ---
 
@@ -154,4 +154,4 @@ The skills also show `GET https://api.insumermodel.com/v1/credits` (balance chec
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
