@@ -7,15 +7,15 @@ description: >
   airdrop or allowlist with InsumerAPI). Each wallet's profile is independently
   signed; the response supports partial success.
 metadata:
-  version: "0.4.2"
+  version: "0.4.3"
   author: InsumerAPI
 ---
 
 # InsumerAPI Batch Wallet Trust Profile
 
-Same curated condition-based access bundle as `insumer-trust` (155 base checks across 27 chains in 10 dimensions, up to 176 checks across 29 chains in 14 dimensions with the optional wallets; `conditionSetVersion` `"2026-10-08"`), but accepts up to **10 wallets** in one request. Each wallet's profile is independently signed; the response supports partial success — failures for one wallet don't fail the rest.
+Same curated condition-based access bundle as `insumer-trust` (155 base checks across 27 chains in 10 dimensions, up to 176 checks across 29 chains in 14 dimensions with the optional wallets; `conditionSetVersion` `"2026-10-08"`), but accepts up to **10 wallets** in one request. Each wallet's profile is independently signed; the response supports partial success: a failure for one wallet does not fail the rest.
 
-Each wallet's profile is signed once, as a whole, by InsumerAPI (`kid: insumer-trust-v2`, with the post-quantum companion). There are no per-dimension signatures and no signature over the batch. **Do not add an orchestrator wrap:** carry each signed profile exactly as issued.
+Each wallet's profile is signed once, as a whole, by InsumerAPI, and signed twice: ES256 (`sig`, `kid`) and a post-quantum ML-DSA-65 signature (`pqSig`, `pqKid`). The `kid` is `insumer-trust-v2` on v2 keys and `insumer-attest-v1` on v1 keys: read it from each entry, never assume it. There are no per-dimension signatures and no signature over the batch. **Do not add an orchestrator wrap:** carry each signed profile exactly as issued.
 
 ## Setup
 
@@ -107,7 +107,7 @@ Abbreviated; the ids and counts are from a real batch of the two wallets above (
 }
 ```
 
-Each entry in `data.results[]` is **either** a `{trust, sig, kid, pqSig, pqKid}` object **or** `{error: { wallet, message }}`. Iterate, branch, and verify each `trust` independently with `insumer-jwks-verify`. Every profile lists its dimensions in the same fixed order: `stablecoins`, `governance`, `nfts`, `staking`, `institutional_stablecoins`, `tokenized_treasuries`, `stablecoin_deposits`, `wrapped_bitcoin`, `names`, `account`, then whichever of `solana`, `xrpl`, `bitcoin`, `tron` that wallet switched on, in that order. The `account` dimension (10 rows: contract code and EIP-7702 delegation on Ethereum, Base, Arbitrum, Optimism and Polygon) is a presence check on the wallet's own code state; in proof mode its rows carry `proof.available: false` with a reason pointing at `/v1/attest`.
+Each entry in `data.results[]` is **either** a `{trust, sig, kid, pqSig, pqKid}` object (`pqSig` and `pqKid` are optional fields: check them when present) **or** `{error: { wallet, message }}`. Iterate, branch, and verify each `trust` independently with `insumer-jwks-verify`. Every profile lists its dimensions in the same fixed order: `stablecoins`, `governance`, `nfts`, `staking`, `institutional_stablecoins`, `tokenized_treasuries`, `stablecoin_deposits`, `wrapped_bitcoin`, `names`, `account`, then whichever of `solana`, `xrpl`, `bitcoin`, `tron` that wallet switched on, in that order. The `account` dimension (10 rows: contract code and EIP-7702 delegation on Ethereum, Base, Arbitrum, Optimism and Polygon) is a presence check on the wallet's own code state; in proof mode its rows carry `proof.available: false` with a reason pointing at `/v1/attest`.
 
 ## Usage
 
@@ -161,7 +161,7 @@ curl -X POST https://api.insumermodel.com/v1/trust/batch \
   }'
 ```
 
-Cost: up to `successful_wallets * 6` credits; a wallet whose profile carried no proof costs 3. Reveals raw on-chain balances — only opt in if needed.
+Cost: up to `successful_wallets * 6` credits; a wallet whose profile carried no proof costs 3. Reveals raw on-chain balances. Only opt in if needed.
 
 ## When to use batch vs single
 
@@ -185,13 +185,13 @@ Cost: up to `successful_wallets * 6` credits; a wallet whose profile carried no 
 
 ## Helper script
 
-`scripts/trust_batch.py` — Python helper. Reads `INSUMER_API_KEY` from env, accepts a wallet list via `--wallets-file` (one EVM address per line) or `--wallets w1,w2,w3`. Builds the proper array-of-objects request body.
+`scripts/trust_batch.py`: Python helper. Reads `INSUMER_API_KEY` from env, accepts a wallet list via `--wallets-file` (one EVM address per line) or `--wallets w1,w2,w3`. Builds the proper array-of-objects request body.
 
 ```bash
 python scripts/trust_batch.py --wallets-file allowlist.txt
 ```
 
-The script prints a summary per wallet (profile ID, held / not held / not evaluated counts, and the checks held in each dimension) and saves the complete signed response to a JSON file named in the summary; `--out PATH` chooses the file. The dimensions print in a fixed order, the same for every wallet: the ten base dimensions (`stablecoins` through `names`, then `account`), then `solana`, `xrpl`, `bitcoin`, `tron` where present. The `account` dimension reads "present" rather than "held" (its rows are code states at the wallet address, not holdings): for example `account: 5 of 10 present: Contract code on Ethereum, Contract code on Base, ...`. Read the summary to answer the user, and verify each entry of `data.results` in the saved file on the raw `sig` path (for example `verify_trust_profile` from the `insumer-verify` package, or the raw-sig instructions in `insumer-jwks-verify`). The script never overwrites a file; if it cannot save one, it prints the complete response instead, so a paid call is never lost. A full profile is tens of thousands of characters, so ten printed in full are more than an agent can read at once; `--full` prints the complete response anyway. Profiles cannot be fetched again, so keep the saved file rather than calling a second time.
+The script prints a summary per wallet (profile ID, held / not held / not evaluated counts, and the checks held in each dimension) and saves the complete signed response to a JSON file named in the summary; `--out PATH` chooses the file. The dimensions print in a fixed order, the same for every wallet: the ten base dimensions (`stablecoins` through `names`, then `account`), then `solana`, `xrpl`, `bitcoin`, `tron` where present. The `account` dimension reads "present" rather than "held" (its rows are code states at the wallet address, not holdings): for example `account: 5 of 10 present: Contract code on Ethereum, Contract code on Base, ...`. Read the summary to answer the user, and verify each entry of `data.results` in the saved file on the raw `sig` path (for example `verify_trust_profile` from the `insumer-verify` package, or the raw-sig instructions in `insumer-jwks-verify`). The script never overwrites a file; if it cannot save one, it prints the complete response instead, so a paid call is never lost. A full profile is tens of thousands of characters, so ten printed in full are more than an agent can read at once; `--full` prints the complete response as well as saving it. Profiles cannot be fetched again, so keep the saved file rather than calling a second time.
 
 For per-wallet cross-chain coverage, edit the script's `--wallets-file` to use JSON-line format (one object per line) or call the API directly with curl.
 
@@ -200,9 +200,9 @@ For per-wallet cross-chain coverage, edit the script's `--wallets-file` to use J
 | Status | Cause | Fix |
 |---|---|---|
 | `400` | Missing `wallets`, exceeds 10, or invalid wallet format | Validate addresses; split into ≤10 batches |
-| `401` | Missing/invalid API key | See `insumer-auth` |
-| `402` | Insufficient credits for entire batch | Top up via Path 4 in `insumer-auth` |
-| `429` | Rate limit exceeded | Slow down; check tier limits |
+| `401` | Invalid API key | See `insumer-auth` |
+| `402` | With a key: insufficient credits for the entire batch. With no key at all: a pay-per-call quote, not a credit problem | With a key, top up via Path 4 in `insumer-auth`. With no key, set `INSUMER_API_KEY` and call again |
+| `429` | Daily request limit reached | It resets on a timer, not by slowing down: wait the number of seconds in the `Retry-After` header |
 
 The batch endpoint does not answer `503` for an upstream data-source failure. A wallet whose chain reads fail is refused on its own: it appears as an `{error: {wallet, message}}` entry in `data.results[]` of a `200` response, is never signed, and does not consume credits. Such an entry is never a `false`: it says the wallet was not read, not that it holds nothing. Retry those wallets later.
 
@@ -213,10 +213,10 @@ The batch endpoint does not answer `503` for an upstream data-source failure. A 
 | `insumer-auth` | API key creation, top-up |
 | `insumer-trust` | Single-wallet curated profile |
 | `insumer-attest` | Custom condition (single call, up to 10 conditions) |
-| `insumer-jwks-verify` | Offline ES256 verification — apply per `data.results[]` entry |
+| `insumer-jwks-verify` | Offline signature verification: apply per `data.results[]` entry |
 
 ## References
 
 - [InsumerAPI OpenAPI spec](https://insumermodel.com/openapi.yaml)
 - [Public JWKS](https://insumermodel.com/.well-known/jwks.json)
-- [Developer docs — trust profile](https://insumermodel.com/developers/trust/)
+- [Developer docs: trust profile](https://insumermodel.com/developers/trust/)

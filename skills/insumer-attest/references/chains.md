@@ -68,7 +68,7 @@ For these chains, use the dedicated wallet field (not `wallet`) and pass the cha
 
 - Only native BTC balance is supported (no Ordinals, no BRC-20)
 - Address types accepted: P2PKH, P2SH, bech32 (P2WPKH/P2WSH), Taproot (P2TR)
-- BTC balance threshold is in **BTC** (not satoshis) — the API handles satoshi conversion internally
+- BTC balance threshold is in **BTC** (not satoshis): the API handles satoshi conversion internally
 
 ### Solana specifics
 
@@ -79,11 +79,11 @@ For these chains, use the dedicated wallet field (not `wallet`) and pass the cha
 
 ## Decimals
 
-`decimals` is optional. Leave it out: the token's own decimals are always read from the chain. If sent it is only a cross-check, and a value that differs from the token's own decimals is rejected with a `400` naming the token's value. Native coins are fixed (18 on EVM chains, 6 for TRX, 9 for SUI).
+`decimals` is optional. Leave it out: the token's own decimals are always read from the chain. If sent it is only a cross-check: on EVM chains, Tron and Sui a value that differs from the token's own decimals is rejected with a `400` naming the token's value. Native coins are fixed (18 on EVM chains, 6 for TRX, 9 for SUI).
 
 The `threshold` is always in display units, as a decimal string: `"100"` means 100 USDC whatever the token's decimals are. Do not guess a token's decimals from its symbol. The same stablecoin can have different decimals on different chains.
 
 ## See also
 
-- [InsumerAPI OpenAPI spec — `ChainId` enum](https://insumermodel.com/openapi.yaml)
-- [Developer docs — verification](https://insumermodel.com/developers/verification/)
+- [InsumerAPI OpenAPI spec: `ChainId` enum](https://insumermodel.com/openapi.yaml)
+- [Developer docs: verification](https://insumermodel.com/developers/verification/)

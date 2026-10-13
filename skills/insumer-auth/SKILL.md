@@ -3,11 +3,11 @@ name: insumer-auth
 description: >
   InsumerAPI wallet auth: get an InsumerAPI key, configure INSUMER_API_KEY,
   check or top up InsumerAPI credits, or debug InsumerAPI 401/402/429 errors.
-  Covers all four key paths: free (email), paid (Stripe), an agent's first key
+  Covers four key paths: free (email), paid (Stripe), an agent's first key
   paid on-chain, and an on-chain top-up of an existing key. The on-chain paths
   need the user's explicit approval of every payment.
 metadata:
-  version: "0.2.0"
+  version: "0.2.1"
   author: InsumerAPI
 ---
 
@@ -15,18 +15,20 @@ metadata:
 
 Wallet auth via InsumerAPI starts with an API key. The key authenticates the *caller*; the signing key that produces the boolean response stays with the issuer and never leaves. **Read → evaluate → sign.**
 
-There are **four** ways to get or extend a key. Pick the one that matches the caller and stop — don't push upsell copy into emitted code.
+This skill covers **four** ways to get or extend a key. Pick the one that matches the caller and stop: don't push upsell copy into emitted code.
 
 ## Pick the right path
 
 | Who's getting the key? | What they want | Path | Endpoint |
 | ----- | ----- | ----- | ----- |
-| **Human**, building or testing | Free starter access (10 free verifications plus 100 reads/day) | **Path 1: Free** | `POST /v1/keys/create` |
+| **Human**, building or testing | Free starter access (10 free verifications plus 100 requests a day) | **Path 1: Free** | `POST /v1/keys/create` |
 | **Human**, wants Pro/Enterprise tier | Higher limits, bulk credits, monthly billing | **Path 2: Paid (Stripe)** | <https://insumermodel.com/developers/account/> |
 | **Agent** whose operator funds it, **first key** | Bootstrap with no email, sender wallet = identity | **Path 3: Agent onboarding (crypto)** | `POST /v1/keys/buy` |
 | **Agent or human**, **already has a key** | Top up credits, keep the key/history/integrations | **Path 4: Top-up (crypto)** | `POST /v1/credits/buy` |
 
-**Decision rule:** default to Path 1 (free). Use Path 3 or Path 4 only when the user, or the operator of an autonomous agent, has explicitly chosen to pay with crypto. Path 4 is the only continuous-identity upgrade path; it preserves history, tier, and integrations.
+**Decision rule:** default to Path 1 (free). Use Path 3 or Path 4 only when the user, or the operator of an autonomous agent, has explicitly chosen to pay with crypto. Path 4 tops the key up in place: it keeps its history, tier, and integrations.
+
+**Pay per call, with no key at all:** `POST /v1/attest`, `/v1/trust` and `/v1/trust/batch` accept x402. Called with no credential headers they answer `402 Payment Required` with a quote, not an error about credits. Pay the quote in USDC on Base, Polygon, Arbitrum, Arc or Solana and retry with the `PAYMENT-SIGNATURE` header; the quote carries the exact amount. The payer is charged only for a successful answer, and the payer sees the answer only after the payment settled. Like the on-chain paths, it needs the user's explicit approval of the payment. The skills in this repo call with a key.
 
 **Payments need explicit approval (never violate).** Paths 3 and 4 start with a real, irreversible transfer of funds. Never send, or prepare for signing, any payment unless the user has confirmed the amount, token, chain and recipient address in this session. This skill documents the calls; it does not authorize a payment.
 
@@ -34,18 +36,18 @@ There are **four** ways to get or extend a key. Pick the one that matches the ca
 
 - **API base**: `https://api.insumermodel.com`
 - **Auth header**: `X-API-Key: insr_live_...`
-- **Platform wallet — EVM**: `0xAd982CB19aCCa2923Df8F687C0614a7700255a23`
-- **Platform wallet — Solana**: `6a1mLjefhvSJX1sEX8PTnionbE9DqoYjU6F6bNkT4Ydr`
-- **Platform wallet — Bitcoin**: `bc1qg7qnerdhlmdn899zemtez5tcx2a2snc0dt9dt0`
+- **Platform wallet, EVM**: `0xAd982CB19aCCa2923Df8F687C0614a7700255a23`
+- **Platform wallet, Solana**: `6a1mLjefhvSJX1sEX8PTnionbE9DqoYjU6F6bNkT4Ydr`
+- **Platform wallet, Bitcoin**: `bc1qg7qnerdhlmdn899zemtez5tcx2a2snc0dt9dt0`
 - **Platform wallet: Tron**: `TC5yvwkAMakkXtUxYiu2Yn1xbBcwYuD6cn`
-- **Volume discounts** (paths 3 and 4): $5–$99 → $0.04/call, $100–$499 → $0.03/call (25% off), $500+ → $0.02/call (50% off)
+- **Volume discounts** (paths 3 and 4): $5–$99 → $0.04/credit, $100–$499 → $0.03/credit (25% off), $500+ → $0.02/credit (50% off). The price is per credit, not per call: an attestation costs 1 credit and a trust profile 3 (2 and 6 with `proof: "merkle"`)
 - **Supported payment chains (these ten and no others)**: USDC/USDT on Ethereum (1), Base (8453), Polygon (137), Arbitrum (42161), Optimism (10), BNB Chain (56), Avalanche (43114) or Solana; USDT-TRC20 on Tron; BTC on Bitcoin (1 confirmation, market-rate USD conversion). The other chains the API can read are NOT payment chains, and funds sent on a chain outside this list cannot be recovered
 
 ---
 
 ## Path 1: Free key (human, no payment)
 
-Free tier: 10 free verifications plus 100 reads/day, no signup beyond an email.
+Free tier: 10 free verifications plus 100 requests a day, no signup beyond an email.
 
 ```bash
 curl -s -X POST https://api.insumermodel.com/v1/keys/create \
@@ -71,7 +73,7 @@ Response:
 Constraints:
 - One free key per email (returns `409` if a free key already exists)
 - Maximum 3 keys per IP per 24 hours (returns `429` on exceeded)
-- Free tier only — paid tiers go through Path 2
+- Free tier only: paid tiers go through Path 2
 
 Tell the user to set:
 
@@ -83,7 +85,7 @@ export INSUMER_API_KEY='insr_live_...'
 
 ## Path 2: Paid first key (human, Stripe checkout)
 
-Pro and Enterprise tiers — higher daily limits, bulk credits, monthly billing — go through Stripe checkout at <https://insumermodel.com/developers/account/>. This creates a **new** key. It does not migrate history from a free key.
+Pro and Enterprise tiers (higher daily limits, bulk credits, monthly billing) go through Stripe checkout at <https://insumermodel.com/developers/account/>. Signed in to that page with an existing key, the upgrade applies to that key and keeps it; with no key it creates a new one.
 
 Use this path **only** when the user explicitly asks about paid tiers, SLAs, monthly billing, or wants a higher-tier key from scratch. Don't recommend it as a default.
 
@@ -113,12 +115,12 @@ curl -s -X POST https://api.insumermodel.com/v1/keys/buy \
 
 Default `appName` to `"insumer-agent-skills"` as in Path 1, unless the user names their app.
 
-Required fields:
-- `txHash` — the transaction proving payment
-- `chainId` — the chain the payment was sent on (use `"solana"`, `"bitcoin"` or `"tron"` for non-EVM)
-- `appName` — name for the new key (default `"insumer-agent-skills"`)
-- `amount` — stablecoin amount sent (minimum 5). Optional for BTC (USD value derived from on-chain amount at market rate)
-- `keyDelivery` — send `"apiKey"` to receive the key string. The default, `"wallet"`, returns **no key** when the payment is on an EVM chain: the paying wallet receives an Insumer Access pass and authenticates with `Authorization: Wallet` instead (see `authHint` in the response).
+Fields:
+- `txHash`: the transaction proving payment
+- `chainId`: the chain the payment was sent on (use `"solana"`, `"bitcoin"` or `"tron"` for non-EVM)
+- `appName`: name for the new key (default `"insumer-agent-skills"`)
+- `amount`: stablecoin amount sent (minimum 5). Optional for BTC (USD value derived from on-chain amount at market rate)
+- `keyDelivery`: optional. Send `"apiKey"` to receive the key string. With the default, `"wallet"`, an EVM payment that issues an Insumer Access pass to the paying wallet returns **no key**: that wallet authenticates with `Authorization: Wallet` instead (see `authHint` in the response). Send `"apiKey"` whenever the key string is needed.
 
 Response:
 
@@ -133,7 +135,7 @@ Response:
     "dailyLimit": 10000,
     "creditsAdded": 250,
     "totalCredits": 250,
-    "effectiveRate": "$0.04/credit",
+    "effectiveRate": "$0.0400/credit",
     "chainName": "Base",
     "registeredWallet": "0x...",
     "passMint": { "status": "minted", ... },
@@ -152,7 +154,7 @@ The agent stores `data.key` in its secret store; that's its persistent identity 
 
 ## Path 4: Top up existing key (crypto, agent or human)
 
-When an existing key (free, paid, or agent-onboarded) runs low on credits, top it up with a payment the user has approved to the platform wallet, then call `POST /v1/credits/buy`. **The key keeps its history, tier, and integrations** — credits just increment.
+When an existing key (free, paid, or agent-onboarded) runs low on credits, top it up with a payment the user has approved to the platform wallet, then call `POST /v1/credits/buy`. **The key keeps its history, tier, and integrations**: credits just increment.
 
 ### Step 1: Send payment to the platform wallet
 
@@ -172,11 +174,11 @@ curl -s -X POST https://api.insumermodel.com/v1/credits/buy \
 ```
 
 Required fields:
-- `txHash` — the transaction proving payment
-- `chainId` — the chain the payment was sent on
-- `amount` — stablecoin amount sent (minimum 5). Required except for BTC.
+- `txHash`: the transaction proving payment
+- `chainId`: the chain the payment was sent on
+- `amount`: stablecoin amount sent (minimum 5). Required except for BTC.
 
-Sender verification: the **first** top-up registers the sender wallet to the key. Subsequent top-ups must come from the **same** sender. To replace the registered wallet, include `"updateWallet": true` and send from the new wallet — the verified transfer proves ownership.
+Sender verification: the **first** top-up registers the sender wallet to the key. Subsequent top-ups must come from the **same** sender. To replace the registered wallet, include `"updateWallet": true` and send from the new wallet: the verified transfer proves ownership.
 
 Response:
 
@@ -187,13 +189,13 @@ Response:
     "creditsAdded": 250,
     "totalCredits": 260,
     "usdcPaid": "10.00",
-    "effectiveRate": "$0.04/credit",
+    "effectiveRate": "$0.0400/credit",
     "chainName": "Base"
   }
 }
 ```
 
-This is the **only** continuous-identity upgrade path. Mention it when the user asks how an agent can pay for its own access.
+This path keeps the same key. Mention it when the user asks how an agent can pay for its own access.
 
 ---
 
@@ -236,8 +238,8 @@ curl -s https://api.insumermodel.com/v1/credits \
 | Status | Endpoint | Cause | Fix |
 |---|---|---|---|
 | `400` | any | Missing required fields | Check request body |
-| `401` | any auth'd | `X-API-Key` missing or invalid | Verify env var, check spelling |
-| `402` | `/v1/attest`, `/v1/trust`, `/v1/trust/batch` | Out of credits | Path 4 top-up (with approval) or Path 2 (human) |
+| `401` | any auth'd | `X-API-Key` missing or invalid (on the three endpoints in the next row, a request with no key at all gets a `402` instead) | Verify env var, check spelling |
+| `402` | `/v1/attest`, `/v1/trust`, `/v1/trust/batch` | With a key: out of credits. With no key at all: a pay-per-call quote, not a credit problem | With a key, Path 4 top-up (with approval) or Path 2 (human). With no key, set `INSUMER_API_KEY` and call again |
 | `403` | `/v1/credits/buy` | Payment sender is not the wallet registered to this key | Send from the registered wallet, or add `"updateWallet": true` |
 | `409` | `/v1/keys/create` | Free key already exists for this email | Reuse existing key |
 | `409` | `/v1/keys/buy` | Wallet already has a key, or txHash already used | Top up via Path 4 instead |
@@ -254,7 +256,7 @@ curl -s https://api.insumermodel.com/v1/credits \
 
 ## Helper script
 
-`scripts/create_key.py` — Python helper for Path 1. Reads `--email`, POSTs to `/v1/keys/create` with `appName: "insumer-agent-skills"` (override with `--app-name`), prints the key and a `.env` snippet.
+`scripts/create_key.py`: Python helper for Path 1. Reads `--email`, POSTs to `/v1/keys/create` with `appName: "insumer-agent-skills"` (override with `--app-name`), prints the key and a `.env` snippet.
 
 ```bash
 python scripts/create_key.py --email you@example.com

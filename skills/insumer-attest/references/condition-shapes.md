@@ -20,8 +20,9 @@ Threshold check on a fungible token balance.
 |---|---|---|
 | `contractAddress` | yes | Token contract (0x + 40 hex on EVM), or `"native"` for the chain's native coin. `"native"` is for `token_balance` and `ratio_to_amount` only. For XRPL: `"native"` for XRP, or the issuer r-address for trust lines. For Bitcoin: must be `"native"`. For Sui: always a coin type (`address::module::Name`); native SUI is `"0x2::sui::SUI"` and `"native"` is a `400`. |
 | `chainId` | yes | Numeric for EVM, `"solana"`/`"xrpl"`/`"bitcoin"`/`"tron"`/`"stellar"`/`"sui"` for non-EVM |
-| `threshold` | yes | Minimum balance in **human units**, as a **decimal string** (`"100"`, `"0.000001"` — not a JSON number). Keys signing with `kid: insumer-attest-v2` (created from 2026-06-10) reject a number with a `400`; a string is accepted by v1 and v2 alike. Must be `> 0` (use `"0.000001"` for prove-any-balance). |
-| `decimals` | optional | Cross-check only; leave it out. The token's own decimals are always read from the chain. If sent, a value that differs from the token's own decimals is rejected with a `400`. |
+| `threshold` | yes | Minimum balance in **human units**, as a **decimal string** (`"100"`, `"0.000001"`, not a JSON number). Keys signing with `kid: insumer-attest-v2` (created from 2026-06-10) reject a number with a `400`; a string is accepted by v1 and v2 alike. Must be `> 0` (use `"0.000001"` for prove-any-balance). |
+| `decimals` | optional | Cross-check only; leave it out. The token's own decimals are always read from the chain. If sent, on EVM chains, Tron and Sui a value that differs from the token's own decimals is rejected with a `400`. |
+| `assetCode` | Stellar trustline tokens only | The asset code of a classic trustline asset; `contractAddress` is then the issuer G-address. Not used for native XLM |
 | `currency` | XRPL only | Trust line currency code (e.g. `"RLUSD"`, `"USDC"`). Case-sensitive: send it exactly as issued |
 | `label` | recommended | Human-readable label (max 100 chars) |
 
@@ -63,7 +64,7 @@ Verify the wallet has a valid EAS (Ethereum Attestation Service) attestation.
 }
 ```
 
-Available templates (current list — fetch live from `GET https://api.insumermodel.com/v1/compliance/templates`):
+Available templates (current list; fetch live from `GET https://api.insumermodel.com/v1/compliance/templates`):
 
 | Template | Provider | Chain |
 |---|---|---|
@@ -94,7 +95,7 @@ Available templates (current list — fetch live from `GET https://api.insumermo
 | `indexer` | with schemaId | EAS indexer contract address |
 | `chainId` | with schemaId | EAS is read on Ethereum (1), Optimism (10), Polygon (137), Base (8453) and Arbitrum (42161) only |
 
-Operator: `valid`.
+Operator: `valid`, or `decoder` for the two Gitcoin Passport templates, whose signed condition carries `decoder` and `decoderMethod` in place of `schemaId`.
 
 ## 4. `farcaster_id`
 

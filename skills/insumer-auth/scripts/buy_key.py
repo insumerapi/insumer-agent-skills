@@ -2,14 +2,15 @@
 """
 Buy an InsumerAPI key with USDC, USDT, or BTC (agent-onboarding path).
 
-Path 3 of 4 (see ../SKILL.md). No email required — sender wallet from the
+Path 3 of 4 (see ../SKILL.md). No email required: sender wallet from the
 on-chain transaction becomes the key's identity. This script never sends
 funds: make the payment with your own wallet, only after the user has approved
 the amount, token, chain and recipient, then call this with its transaction hash.
 
 It sends keyDelivery "apiKey" so the key string is returned. With the API's
-default ("wallet"), an EVM purchase returns no key: the paying wallet gets an
-Insumer Access pass and authenticates with Authorization: Wallet instead.
+default ("wallet"), an EVM purchase that issues an Insumer Access pass to the
+paying wallet returns no key: that wallet authenticates with Authorization: Wallet
+instead.
 
 Platform wallets:
   EVM:     0xAd982CB19aCCa2923Df8F687C0614a7700255a23

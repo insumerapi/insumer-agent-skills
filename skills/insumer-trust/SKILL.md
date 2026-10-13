@@ -11,7 +11,7 @@ description: >
   specified one by one (for example an InsumerAPI pre-transaction trust check). The profile is signed once, as a whole. Carry it unchanged:
   never re-sign or wrap it.
 metadata:
-  version: "0.3.0"
+  version: "0.3.1"
   author: InsumerAPI
 ---
 
@@ -48,7 +48,7 @@ Pick this skill when the developer wants a snapshot. Pick `insumer-attest` when 
 
 ## Architectural property to preserve
 
-The whole trust profile is signed once by InsumerAPI: one `sig` under `kid: insumer-trust-v2` (plus the post-quantum companion `pqSig` / `pqKid`) covers the entire `trust` object. There are no per-dimension or per-check signatures. **Do not add an orchestrator-layer wrap.** If you build a multi-issuer trust envelope that includes this profile, carry the signed object exactly as issued, beside the other issuers' signed objects, and never re-sign it or wrap it under a new envelope signature. Verifiers should be able to check InsumerAPI's signature directly against its JWKS.
+The whole trust profile is signed once by InsumerAPI: one `sig` covers the entire `trust` object. The response is signed twice: ES256 (`sig`, `kid`) and a post-quantum ML-DSA-65 signature (`pqSig`, `pqKid`, optional fields: check them when present). The `kid` is `insumer-trust-v2` on v2 keys and `insumer-attest-v1` on v1 keys: read it from the response, never assume it. There are no per-dimension or per-check signatures. **Do not add an orchestrator-layer wrap.** If you build a multi-issuer trust envelope that includes this profile, carry the signed object exactly as issued, beside the other issuers' signed objects, and never re-sign it or wrap it under a new envelope signature. Verifiers should be able to check InsumerAPI's signature directly against its JWKS.
 
 ## Setup
 
@@ -147,7 +147,7 @@ curl -X POST https://api.insumermodel.com/v1/trust \
   }'
 ```
 
-Each provided Solana, XRPL, Bitcoin or Tron wallet adds its dimension to the response. A Stellar or Sui wallet (`stellarWallet`, `suiWallet`) adds no dimension; it lets the matching institutional-stablecoin entries be evaluated instead of marked `evaluated: false`.
+Each provided Solana, XRPL, Bitcoin or Tron wallet adds its dimension to the response. A Stellar or Sui wallet (`stellarWallet`, `suiWallet`) adds no dimension; it lets the matching rows inside the base dimensions be evaluated instead of marked `evaluated: false`: the Stellar and Sui institutional-stablecoin entries, and for Sui also USDY on Sui in tokenized treasuries.
 
 ### Example 4: Merkle proofs (advanced)
 
@@ -186,7 +186,7 @@ For multiple wallets in one call, use `insumer-trust-batch`.
 
 ## Helper script
 
-`scripts/trust.py` — Python helper that wraps `POST /v1/trust`. Reads `INSUMER_API_KEY` from env, accepts `--wallet`, `--solana`, `--xrpl`, `--bitcoin`, `--tron`, `--stellar`, `--sui`, `--proof merkle`.
+`scripts/trust.py`: Python helper that wraps `POST /v1/trust`. Reads `INSUMER_API_KEY` from env, accepts `--wallet`, `--solana`, `--xrpl`, `--bitcoin`, `--tron`, `--stellar`, `--sui`, `--proof merkle`.
 
 ```bash
 python scripts/trust.py --wallet 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
@@ -197,8 +197,9 @@ python scripts/trust.py --wallet 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
 | Status | Cause | Fix |
 |---|---|---|
 | `400` | Missing `wallet` or invalid format | EVM wallet `^0x[a-fA-F0-9]{40}$` is required |
-| `401` | Missing/invalid API key | See `insumer-auth` |
-| `402` | Out of credits | Top up via Path 4 in `insumer-auth` |
+| `401` | Invalid API key | See `insumer-auth` |
+| `402` | With a key: out of credits. With no key at all: a pay-per-call quote, not a credit problem | With a key, top up via Path 4 in `insumer-auth`. With no key, set `INSUMER_API_KEY` and call again |
+| `429` | Daily request limit reached | It resets on a timer, not by slowing down: wait the number of seconds in the `Retry-After` header |
 | `503` | Upstream blockchain data source unavailable | Retryable; no credits charged |
 
 A `503` carries error code `rpc_failure`. It means a read did not complete and nothing was signed. It is never a `false`: do not report it as a check that was not held. Retry the call.
@@ -216,4 +217,4 @@ A `503` carries error code `rpc_failure`. It means a read did not complete and n
 
 - [InsumerAPI OpenAPI spec](https://insumermodel.com/openapi.yaml)
 - [Public JWKS](https://insumermodel.com/.well-known/jwks.json)
-- [Developer docs — trust profile](https://insumermodel.com/developers/trust/)
+- [Developer docs: trust profile](https://insumermodel.com/developers/trust/)

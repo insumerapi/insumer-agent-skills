@@ -9,13 +9,13 @@ description: >
   holds with InsumerAPI, or to compose an InsumerAPI wallet_state signal in a
   multi-issuer trust envelope. Read, evaluate, sign, in one call.
 metadata:
-  version: "0.3.0"
+  version: "0.3.1"
   author: InsumerAPI
 ---
 
 # InsumerAPI Wallet Condition Attestation
 
-**Boolean, not balance.** A signed `true`/`false` answering "does this wallet satisfy this condition right now?" — never the underlying balance. The response is ES256-signed and verifiable offline against the public JWKS at `https://insumermodel.com/.well-known/jwks.json`. The signing key never leaves the issuer; anyone holding the JWKS can independently re-run the verification.
+**Boolean, not balance.** A signed `true`/`false` answering "does this wallet satisfy this condition right now?", never the underlying balance. The response is signed twice (ES256 and a post-quantum ML-DSA-65 signature) and verifiable offline against the public JWKS at `https://insumermodel.com/.well-known/jwks.json`. The signing key never leaves the issuer; anyone holding the JWKS can independently re-run the verification.
 
 You send conditions in. You get cryptographically verifiable results out.
 
@@ -23,18 +23,18 @@ You send conditions in. You get cryptographically verifiable results out.
 
 Wallet auth is the OAuth-equivalent for what a wallet holds. The pattern is **read → evaluate → sign**:
 
-1. **Read** — InsumerAPI reads the wallet's on-chain state on the requested chain
-2. **Evaluate** — wallet state is checked against the supplied condition
-3. **Sign** — a boolean result is returned, ES256-signed, with a `conditionHash` for tamper detection and a block anchor for replay defense
+1. **Read**: InsumerAPI reads the wallet's on-chain state on the requested chain
+2. **Evaluate**: wallet state is checked against the supplied condition
+3. **Sign**: a boolean result is returned, ES256-signed, with a `conditionHash` for tamper detection and a block anchor for replay defense
 
 **No secrets. No identity-first. No static credentials.** Token gating is one form of condition-based access; this is the general primitive.
 
 ## Capabilities
 
 - Single-call attestation across 37 chains: 31 EVM, Solana, XRPL, Bitcoin, Tron, Stellar, Sui
-- Up to 10 conditions per request — overall `pass` is `true` only if every condition is `true`
-- Ten condition types: `token_balance`, `nft_ownership` (33 of 37 chains: EVM + Solana + XRPL), `eas_attestation` (Ethereum, Optimism, Polygon, Base, Arbitrum), `farcaster_id`, `evm_view_call` (single-address-argument view function returning bool; `selector` required, EVM chains only), `ratio_to_amount`, `ratio_to_supply`, `erc8004_agent` (Base; `agentId` required), `erc7710_delegation` (Base; `delegationManager`, `expectedDelegator`, `delegation` required; max 3 per call, 5-minute expiry), `account_code` (EVM chains only; `expect` required: `"none"` for a plain key account with no code, `"eip7702"` for an EIP-7702 delegation designator, `"contract"` for any other code; optional `delegate`, only with `"eip7702"`, met only when the designator points at that address; a non-EVM `chainId` or a `delegate` with another `expect` is a `400`)
-- ES256 signature on every response, with optional ES256 JWT (`format: "jwt"`) for standard JWT-library verification
+- Up to 10 conditions per request: overall `pass` is `true` only if every condition is `true`
+- Ten condition types: `token_balance`, `nft_ownership` (33 of 37 chains: EVM + Solana + XRPL), `eas_attestation` (Ethereum, Optimism, Polygon, Base, Arbitrum), `farcaster_id`, `evm_view_call` (single-address-argument view function returning bool; `contractAddress`, `chainId` and `selector` required, EVM chains only), `ratio_to_amount` (EVM chains only; `contractAddress`, `chainId`, `multiple` and `amount` required; met when the balance is at least `multiple` times `amount`), `ratio_to_supply` (EVM chains, ERC-20 contracts only; `contractAddress`, `chainId` and `minFraction` required, a fraction above 0 and up to 1; met when the balance is at least that share of total supply). On v2 keys `multiple`, `amount` and `minFraction` are decimal strings, like `threshold`. `erc8004_agent` (Base; `agentId` required), `erc7710_delegation` (Base; `delegationManager`, `expectedDelegator`, `delegation` required; max 3 per call, 5-minute expiry), `account_code` (EVM chains only; `expect` required: `"none"` for a plain key account with no code, `"eip7702"` for an EIP-7702 delegation designator, `"contract"` for any other code; optional `delegate`, only with `"eip7702"`, met only when the designator points at that address; a non-EVM `chainId` or a `delegate` with another `expect` is a `400`)
+- Every response is signed twice: ES256 (`sig`, `kid`) and a post-quantum ML-DSA-65 signature (`pqSig`, `pqKid`, optional fields: check them when present). `format: "jwt"` adds an ES256 JWT (`jwt`) for standard JWT-library verification, with the same claims as a post-quantum JWT (`pqJwt`)
 - Optional EIP-1186 Merkle proofs (`proof: "merkle"`) for 27 of the 31 EVM chains (not ZKsync Era, Sei, Viction or XDC Network, nor any non-EVM chain): storage proofs on token_balance conditions, account proofs (`subject: "account_code"`) on account_code conditions, plus revocation-slot proofs for erc7710_delegation on the verified v1.3.0 manager
 - 30-minute attestation TTL, 5 minutes when the request includes an `erc7710_delegation` condition (`expiresAt` in response)
 
@@ -51,7 +51,7 @@ export INSUMER_API_KEY='insr_live_...'
 - **API base**: `https://api.insumermodel.com`
 - **JWKS URL**: `https://insumermodel.com/.well-known/jwks.json`
 - **Signing algorithm**: ES256 (ECDSA P-256)
-- **Key IDs (`kid`)**: three over the same P-256 key — `insumer-attest-v2` (attest, every key issued since 2026-06-10), `insumer-trust-v2` (trust), `insumer-attest-v1` (pre-cutover keys, and the commerce discount path). **Resolve the key by the `kid` on the response; never pin one and never take `keys[0]`.** The `kid` also selects the verification rules: v1 signs bare JSON, v2 signs a domain-separated canonical preimage.
+- **Key IDs (`kid`)**: three over the same P-256 key: `insumer-attest-v2` (attest, every key issued since 2026-06-10), `insumer-trust-v2` (trust), `insumer-attest-v1` (pre-cutover keys, and the commerce discount path). **Resolve the key by the `kid` on the response; never pin one and never take `keys[0]`.** The `kid` also selects the verification rules: v1 signs bare JSON, v2 signs a domain-separated canonical preimage.
 - **Auth header**: `X-API-Key: insr_live_...`
 - **Attestation TTL**: 30 minutes, or 5 when the request includes an `erc7710_delegation` condition (`expiresAt` in response)
 - **Signature format**: base64 P1363 (88 chars) on the `sig` field; ES256 JWT on the `jwt` field when `format: "jwt"` is requested
@@ -80,7 +80,7 @@ curl -X POST https://api.insumermodel.com/v1/attest \
   }'
 ```
 
-Returns `{ "ok": true, "data": { "attestation": { "pass": true|false, ... }, "sig": "...", "kid": "insumer-attest-v2" }, "meta": { "creditsRemaining": ..., "creditsCharged": 1, ... } }`.
+Returns `{ "ok": true, "data": { "attestation": { "pass": true|false, ... }, "sig": "...", "kid": "insumer-attest-v2", "pqSig": "...", "pqKid": "insumer-attest-pq1" }, "meta": { "creditsRemaining": ..., "creditsCharged": 1, ... } }`.
 
 ### Example 2: NFT ownership
 
@@ -146,7 +146,7 @@ curl -X POST https://api.insumermodel.com/v1/attest \
   }'
 ```
 
-`proof: "merkle"` returns EIP-1186 storage proofs alongside the boolean and **costs 2 credits instead of 1** (1 if no proof could be delivered). **Note**: Merkle mode reveals the raw on-chain balance to the caller — standard mode does not. Only opt in if the consumer needs the raw balance.
+`proof: "merkle"` returns EIP-1186 storage proofs alongside the boolean and **costs 2 credits instead of 1** (1 if no proof could be delivered). **Note**: Merkle mode reveals the raw on-chain balance to the caller. Standard mode does not. Only opt in if the consumer needs the raw balance.
 
 Proof subjects are three: `account_balance`, `account_code` and `delegation_revocation`, plus the subject-less ERC-20 slot proof. An `account_code` condition in proof mode carries an EIP-1186 account proof with `subject: "account_code"` and the fields `blockNumber`, `nonce`, `balance`, `storageHash`, `codeHash`, `accountProof`. `codeHash` is the proven value: keccak256 of empty code (`0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470`) means no code; keccak256 of `0xef0100` followed by the 20-byte target means an EIP-7702 delegation to that target (checkable only with the `delegate` the verifier supplies); anything else means contract code. An account absent from the state trie may report all zeros, which also means no code. Standard mode never returns the code or the delegation target, only `met`.
 
@@ -194,8 +194,8 @@ XRPL conditions use `xrplWallet` instead of `wallet` and require a `currency` fi
 When emitting integration code that calls `/v1/attest`, the agent MUST:
 
 1. **Read the API key from an env var.** Never inline `insr_live_...`.
-2. **Verify the signature offline.** Pair this skill with `insumer-jwks-verify`. The signed boolean is the product — the JSON body alone is untrusted.
-3. **Do not send `decimals`.** It is optional. Leave it out: the token's own decimals are always read from the chain. If sent it is only a cross-check, and a value that differs from the token's own decimals is rejected with a `400`.
+2. **Verify the signature offline.** Pair this skill with `insumer-jwks-verify`. The signed boolean is the product: the JSON body alone is untrusted.
+3. **Do not send `decimals`.** It is optional. Leave it out: the token's own decimals are always read from the chain. If sent it is only a cross-check: on EVM chains, Tron and Sui a value that differs from the token's own decimals is rejected with a `400`.
 3a. **Send the `token_balance` `threshold` as a decimal string** (`"100"`, not `100`). Keys created from 2026-06-10 sign with `kid: insumer-attest-v2` and reject a JSON number with a `400`; a string is accepted by both v1 and v2 keys.
 4. **Call from a backend, not a browser.** The API key is a backend credential.
 5. **Don't cache the verdict.** Cache the JWKS (the `jose` library's `createRemoteJWKSet` does this for you). Pass/fail expires at `expiresAt` (30 minutes, or 5 for an `erc7710_delegation` condition), and wallet state changes.
@@ -203,7 +203,7 @@ When emitting integration code that calls `/v1/attest`, the agent MUST:
 
 ## Helper script
 
-`scripts/attest.py` — Python helper that wraps `POST /v1/attest`. Reads `INSUMER_API_KEY` from env, accepts the full JSON request body (wallet + conditions) on stdin or via `--body-file`, prints the signed response.
+`scripts/attest.py`: Python helper that wraps `POST /v1/attest`. Reads `INSUMER_API_KEY` from env, accepts the full JSON request body (wallet + conditions) on stdin or via `--body-file`, prints the signed response.
 
 ```bash
 echo '{"wallet":"0x...","conditions":[{"type":"token_balance",...}]}' | python scripts/attest.py
@@ -214,8 +214,9 @@ echo '{"wallet":"0x...","conditions":[{"type":"token_balance",...}]}' | python s
 | Status | Cause | Fix |
 |---|---|---|
 | `400` | Missing/invalid wallet, conditions, or condition fields | Check request body against `references/condition-shapes.md` |
-| `401` | Missing or invalid API key | See `insumer-auth` skill |
-| `402` | Out of verification credits | Top up via Path 4 in `insumer-auth`, only after the user approves the payment |
+| `401` | Invalid API key | See `insumer-auth` skill |
+| `402` | With a key: out of verification credits. With no key at all: a pay-per-call quote, not a credit problem | With a key, top up via Path 4 in `insumer-auth`, only after the user approves the payment. With no key, set `INSUMER_API_KEY` and call again |
+| `429` | Daily request limit reached | It resets on a timer, not by slowing down: wait the number of seconds in the `Retry-After` header |
 | `503` | Upstream blockchain data source unavailable | Retryable after a short delay; no credits charged |
 
 A `503` carries error code `rpc_failure`. It means a read did not complete and nothing was signed. It is never a `false`: do not report it as a condition that was not met. Retry the call.
@@ -231,6 +232,6 @@ A `503` carries error code `rpc_failure`. It means a read did not complete and n
 ## References
 
 - [chains.md](references/chains.md): full 37-chain coverage table
-- [condition-shapes.md](references/condition-shapes.md) — every supported condition type with full request shape
+- [condition-shapes.md](references/condition-shapes.md): every supported condition type with full request shape
 - [InsumerAPI OpenAPI spec](https://insumermodel.com/openapi.yaml)
 - [Public JWKS](https://insumermodel.com/.well-known/jwks.json)

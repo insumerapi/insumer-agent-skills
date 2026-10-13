@@ -6,12 +6,12 @@ Agent skills for [InsumerAPI](https://insumermodel.com): wallet auth and conditi
 
 | Skill | Description | Version | Author |
 | ----- | ----------- | ------- | ------ |
-| [insumer-auth](insumer-auth/) | Free API key creation, env var setup, credit balance | 0.2.0 | InsumerAPI |
-| [insumer-attest](insumer-attest/) | Custom condition attestation, ten condition types (`/v1/attest`) | 0.3.0 | InsumerAPI |
-| [insumer-trust](insumer-trust/) | Curated wallet trust profile, 155 base checks in 10 dimensions (`/v1/trust`) | 0.3.0 | InsumerAPI |
-| [insumer-trust-batch](insumer-trust-batch/) | Batch trust profiles (`/v1/trust/batch`) | 0.4.2 | InsumerAPI |
-| [insumer-jwks-verify](insumer-jwks-verify/) | Offline ES256 verification against the public JWKS | 0.2.0 | InsumerAPI |
-| [insumer-discount](insumer-discount/) | Token-holder discounts: store terms, optional wallet proof, signed code (`/v1/verify`) | 0.1.0 | InsumerAPI |
+| [insumer-auth](insumer-auth/) | Free API key creation, env var setup, credit balance | 0.2.1 | InsumerAPI |
+| [insumer-attest](insumer-attest/) | Custom condition attestation, ten condition types (`/v1/attest`) | 0.3.1 | InsumerAPI |
+| [insumer-trust](insumer-trust/) | Curated wallet trust profile, 155 base checks in 10 dimensions (`/v1/trust`) | 0.3.1 | InsumerAPI |
+| [insumer-trust-batch](insumer-trust-batch/) | Batch trust profiles (`/v1/trust/batch`) | 0.4.3 | InsumerAPI |
+| [insumer-jwks-verify](insumer-jwks-verify/) | Offline ES256 verification against the public JWKS | 0.2.1 | InsumerAPI |
+| [insumer-discount](insumer-discount/) | Token-holder discounts: store terms, optional wallet proof, signed code (`/v1/verify`) | 0.1.1 | InsumerAPI |
 
 Each skill includes a `scripts/` folder with request helpers; some also include a `references/` folder with detailed shapes and reference values.
 
@@ -23,7 +23,7 @@ Set the API key once (created via the `insumer-auth` skill):
 export INSUMER_API_KEY='insr_live_...'
 ```
 
-Then ask your agent something that triggers any of the skills above. They auto-activate based on the user's request — no manual invocation needed.
+Then ask your agent something that triggers any of the skills above. They auto-activate based on the user's request, with no manual invocation needed.
 
 ## API base
 

@@ -54,11 +54,10 @@ def main() -> int:
     args = parser.parse_args()
 
     merchant = urllib.parse.quote(args.merchant, safe="")
+    # A store can answer the check without being listed in the public directory,
+    # so a miss here is not final: the check below returns the same terms.
     status, detail = call("GET", f"{API}/merchants/{merchant}")
-    if status != 200:
-        print(json.dumps(detail, indent=2))
-        return 1
-    terms = (detail.get("data") or {}).get("walletTerms")
+    terms = (detail.get("data") or {}).get("walletTerms") if status == 200 and isinstance(detail, dict) else None
 
     qs = urllib.parse.urlencode({"merchant": args.merchant, "wallet": args.wallet.lower()})
     status, check = call("GET", f"{API}/discount/check?{qs}")
@@ -66,6 +65,8 @@ def main() -> int:
         print(json.dumps(check, indent=2))
         return 1
     data = check.get("data") or {}
+    if terms is None:
+        terms = data.get("walletTerms")
     summary = {
         "walletTerms": terms,
         "discountWithoutProof": data.get("totalDiscount"),

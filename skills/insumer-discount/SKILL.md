@@ -9,7 +9,7 @@ description: >
   wallet gets a bigger discount, or needs a discount in ACP or UCP checkout
   format.
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
   author: InsumerAPI
 ---
 
@@ -32,19 +32,19 @@ Get the API key from the `insumer-auth` skill, then:
 export INSUMER_API_KEY='insr_live_...'
 ```
 
-Creating a code uses one of the **merchant's** credits, not the caller's.
+A code that carries a discount uses one credit from the API key that owns the store. A caller using another key is not charged; when the caller's key owns the store, the caller's key pays. A 0% result is free.
 
 ## Reference values (do not hallucinate)
 
 - **API base**: `https://api.insumermodel.com`
-- **Store terms**: `GET /v1/merchants/{merchantId}` → `data.walletTerms` (no key needed)
+- **Store terms**: `GET /v1/merchants/{merchantId}` → `data.walletTerms` (no key needed). The free check returns the same `walletTerms`, and also answers for a store that is not listed in the public directory
 - **Free check**: `GET /v1/discount/check?merchant={merchantId}&wallet={0x...}` (no key needed)
 - **Create a code**: `POST /v1/verify` with `X-API-Key` (also `POST /v1/acp/discount` and `POST /v1/ucp/discount` for checkout formats)
 - **Validate a code**: `GET /v1/codes/{code}` (no key needed)
 - **Proof message domain**: `api.insumermodel.com`
 - **Proof message URI**: `https://api.insumermodel.com/v1/merchants/{merchantId}` (exactly this merchant)
 - **Proof freshness**: signed within the last 5 minutes; every nonce used once
-- **Proof wallets**: EVM wallets that sign with `personal_sign` (EIP-191). Smart-contract wallets are not accepted yet. Solana, XRPL and other wallets can still get the unproven terms.
+- **Proof wallets**: EVM wallets that sign with `personal_sign` (EIP-191). Smart-contract wallets are not accepted yet. Solana and XRPL wallets can still get the unproven terms.
 
 ## Usage
 
@@ -138,9 +138,11 @@ python scripts/discount.py --merchant acme-store --wallet 0xd8dA...6045 --create
 |---|---|---|
 | `400` | Missing or invalid field; proof sent with a non-EVM wallet | Check the request body |
 | `401` | Missing API key, or a `walletProof` that was refused | See `insumer-auth`; re-sign a fresh message |
-| `402` | The merchant has no credits left | Nothing the caller can do; tell the user |
-| `403` | The merchant has not enabled app access | Nothing the caller can do |
-| `429` | The key's daily limit, or the store's daily limit for an unproven wallet | Prove the wallet (the store's limit does not apply), or try tomorrow |
+| `402` | The API key that owns the store has no credits left | If the store is the caller's own, top up (Path 4 in `insumer-auth`). Otherwise nothing the caller can do; tell the user |
+| `403` | The store has not enabled app access, or has no active owner key | Nothing the caller can do |
+| `404` | Merchant not found | Check the merchant ID |
+| `409` | The store's recognition is paused by its owner | No code is created and no credit is used; tell the user |
+| `429` | The key's daily limit; the store's daily limit for an unproven wallet; or the hourly limit on discount codes requested with a key other than the store owner's | For the store's daily limit, prove the wallet (the limit does not apply to a proven wallet) or try after 00:00 UTC. For the hourly limit, wait the time the message gives: proving the wallet does not lift it |
 | `503` | A read did not complete (`rpc_failure`) | Retry after a short delay; no credit used |
 
 A `503` with `rpc_failure` is never "not eligible". Retry the call.

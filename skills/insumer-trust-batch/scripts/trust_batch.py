@@ -74,7 +74,11 @@ def _ordered_dimensions(dims: dict) -> list:
 
 
 def _s(value) -> str:
-    return "" if value is None else str(value)
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
 
 
 def _int(value):
@@ -88,6 +92,8 @@ def _signed(entry: dict) -> bool:
 
 def summarize(payload: dict, saved_to: str):
     """Return a short summary, or None when the response carries no results list."""
+    if not isinstance(payload, dict):
+        return None
     data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
     results = data.get("results")
     if not isinstance(results, list):
@@ -116,7 +122,8 @@ def summarize(payload: dict, saved_to: str):
         if isinstance(trust, dict):
             s = trust.get("summary") if isinstance(trust.get("summary"), dict) else {}
             if _signed(e):
-                pq = f" + {e['pqKid']}" if e.get("pqKid") and e.get("pqSig") else ""
+                pq_sig, pq_kid = e.get("pqSig"), e.get("pqKid")
+                pq = f" + {pq_kid}" if isinstance(pq_sig, str) and pq_sig and isinstance(pq_kid, str) and pq_kid else ""
                 signature = f"signed ({e['kid']}{pq})"
             else:
                 signature = "returned without a signature: do not rely on it"
@@ -145,7 +152,7 @@ def summarize(payload: dict, saved_to: str):
             err = raw if isinstance(raw, dict) else {}
             reason = _s(err.get("message")) or _s(err.get("code")) or (raw if isinstance(raw, str) else "no reason given")
             out.append(f"{i}. {_s(err.get('wallet')) or '(wallet not named)'} · not signed: {reason}")
-            out.append("   No profile was signed for this wallet and no credits were charged for it. "
+            out.append("   No profile was signed for this wallet. No credits were charged for it. "
                        "Retry this wallet; never read this entry as a no.")
         out.append("")
     return "\n".join(out).rstrip()
@@ -181,7 +188,7 @@ def parse_wallets_file(path: str) -> list:
                 try:
                     obj = json.loads(line)
                 except json.JSONDecodeError as e:
-                    print(f"Invalid JSON line: {line!r} — {e}", file=sys.stderr)
+                    print(f"Invalid JSON line: {line!r}: {e}", file=sys.stderr)
                     sys.exit(1)
                 if "wallet" not in obj:
                     print(f"Missing 'wallet' in line: {line!r}", file=sys.stderr)
@@ -200,7 +207,7 @@ def main() -> int:
     parser.add_argument("--proof", choices=["merkle"],
                         help="Set 'merkle' for EIP-1186 proofs (6 credits/wallet)")
     parser.add_argument("--full", action="store_true",
-                        help="Print the complete signed response instead of the summary")
+                        help="Print the complete signed response instead of the summary (it is saved as well)")
     parser.add_argument("--out",
                         help="Where to save the complete signed response (default: trust_batch_<time>.json); "
                              "an existing file is never overwritten")
@@ -249,16 +256,19 @@ def main() -> int:
         print(f"HTTP {e.code}: {err_body}", file=sys.stderr)
         return 1
 
+    # The call has been paid for: whatever happens below, the response is either
+    # saved or printed in full, never lost. It is saved before it is parsed.
+    saved = save_response(raw, args.out or f"trust_batch_{time.strftime('%Y%m%dT%H%M%S')}.json")
+
     if args.full:
+        if saved:
+            print(f"The complete response is saved in {saved}.", file=sys.stderr)
         try:
             print(json.dumps(json.loads(raw.decode("utf-8")), indent=2))
         except ValueError:
             sys.stdout.write(raw.decode("utf-8", errors="replace"))
         return 0
 
-    # The call has been paid for: whatever happens below, the response is either
-    # saved or printed in full, never lost. It is saved before it is parsed.
-    saved = save_response(raw, args.out or f"trust_batch_{time.strftime('%Y%m%dT%H%M%S')}.json")
     try:
         payload = json.loads(raw.decode("utf-8"))
     except ValueError:

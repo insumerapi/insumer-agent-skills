@@ -28,7 +28,8 @@ ISSUER = "https://api.insumermodel.com"
 ALGORITHMS = ["ES256"]
 
 
-def extract_jwt(stdin_text: str) -> str:
+def extract_jwt(stdin_text: str):
+    """Return the JWT to verify, or None when the input is a response object that carries no jwt."""
     stripped = stdin_text.strip()
     # Try parsing as JSON envelope first
     if stripped.startswith("{"):
@@ -38,11 +39,11 @@ def extract_jwt(stdin_text: str) -> str:
             return stripped
         # Look in common locations
         if isinstance(obj, dict):
-            if "jwt" in obj:
+            if isinstance(obj.get("jwt"), str):
                 return obj["jwt"]
-            if "data" in obj and isinstance(obj["data"], dict) and "jwt" in obj["data"]:
+            if isinstance(obj.get("data"), dict) and isinstance(obj["data"].get("jwt"), str):
                 return obj["data"]["jwt"]
-        return stripped
+        return None
     return stripped
 
 
@@ -53,6 +54,12 @@ def main() -> int:
         return 1
 
     token = extract_jwt(text)
+    if token is None:
+        print("NOT CHECKED: the input is a response with no jwt field, so there is no JWT to verify. "
+              "This is not a verdict on the response. A raw sig response (every trust profile, and "
+              "attestations requested without format: \"jwt\") is verified with insumer-verify: "
+              "pip install insumer-verify.", file=sys.stderr)
+        return 1
     if not token or "." not in token:
         print("INVALID: input does not look like a JWT.", file=sys.stderr)
         return 1
@@ -67,7 +74,7 @@ def main() -> int:
             issuer=ISSUER,
         )
     except jwt.InvalidIssuerError as e:
-        print(f"INVALID: issuer mismatch — {e}", file=sys.stderr)
+        print(f"INVALID: issuer mismatch: {e}", file=sys.stderr)
         return 1
     except jwt.ExpiredSignatureError:
         print("INVALID: JWT has expired (past its exp: 30 min, or 5 for a delegation condition).", file=sys.stderr)

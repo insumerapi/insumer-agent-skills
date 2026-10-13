@@ -2,8 +2,8 @@
 """
 Top up an existing InsumerAPI key with credits via on-chain payment.
 
-Path 4 of 4 (see ../SKILL.md). Preserves key, history, tier, and integrations
-— credits just increment. This script never sends funds: make the payment with
+Path 4 of 4 (see ../SKILL.md). Preserves key, history, tier, and integrations:
+credits just increment. This script never sends funds: make the payment with
 your own wallet, only after the user has approved the amount, token, chain and
 recipient, then call this with its transaction hash. Sender must match the wallet registered to the
 key (or pass --update-wallet to replace it).
