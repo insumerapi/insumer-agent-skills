@@ -48,7 +48,16 @@ npx skills add insumerapi/insumer-agent-skills
 npx skills add insumerapi/insumer-agent-skills --global
 ```
 
-### Option B: Manual (Claude Code)
+### Option B: Claude Code plugin
+
+```bash
+claude plugin marketplace add insumerapi/insumer-agent-skills
+claude plugin install insumer@insumerapi
+```
+
+The plugin carries the same six skills and nothing else: no hooks and no MCP servers. `claude plugin details insumer` lists what it loaded.
+
+### Option C: Manual (Claude Code)
 
 Each skill folder goes directly under `~/.claude/skills/` (one level deep; a nested `insumer/` group folder is not discovered):
 
@@ -58,7 +67,7 @@ mkdir -p ~/.claude/skills
 cp -r insumer-agent-skills/skills/insumer-* ~/.claude/skills/
 ```
 
-### Option C: Manual (Grok Build)
+### Option D: Manual (Grok Build)
 
 Grok Build reads the same `SKILL.md` format from `~/.grok/skills/` (every project) or `.grok/skills/` in a repo:
 
