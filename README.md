@@ -124,7 +124,7 @@ Each skill encodes these as hard constraints, with reference shapes verified aga
 
 ## Compatible agents
 
-These skills work in any [agentskills.io](https://agentskills.io)-compatible agent. The current adopter list includes Claude, Claude Code, Cursor, GitHub Copilot, VS Code, OpenAI Codex, Google Gemini CLI, JetBrains Junie, Sourcegraph Amp, Block Goose, OpenHands, OpenCode, Letta, Roo Code, Mistral Vibe, ByteDance Trae, Snowflake Cortex, Databricks Genie, Spring AI, Kiro, Workshop, Qodo, Factory, Firebender, and others; see [agentskills.io/home](https://agentskills.io/home) for the live list. xAI's Grok Build reads the same `SKILL.md` format (see Option C above).
+These skills work in any [agentskills.io](https://agentskills.io)-compatible agent. The current adopter list includes Claude, Claude Code, Cursor, GitHub Copilot, VS Code, OpenAI Codex, Google Gemini CLI, JetBrains Junie, Sourcegraph Amp, Block Goose, OpenHands, OpenCode, Letta, Roo Code, Mistral Vibe, ByteDance Trae, Snowflake Cortex, Databricks Genie, Spring AI, Kiro, Workshop, Qodo, Factory, Firebender, and others; see [agentskills.io/home](https://agentskills.io/home) for the live list. xAI's Grok Build reads the same `SKILL.md` format (see Option D above).
 
 ---
 
