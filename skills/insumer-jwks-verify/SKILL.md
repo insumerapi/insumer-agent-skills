@@ -29,7 +29,7 @@ InsumerAPI signs every `/v1/attest`, `/v1/trust`, and `/v1/trust/batch` response
 
 InsumerAPI returns up to **two** verifiable forms in a signed response:
 
-1. **`sig` field** (every response): base64 P1363 ES256 signature over the preimage the `kid` selects (see "What's signed" in `references/jwks-format.md`). Attestations: for `insumer-attest-v2`, the domain tag `insumer.attestation.v2` + newline + canonical JSON (keys sorted recursively, no whitespace) of `{v:2, id, pass, results, attestedAt}`; for `insumer-attest-v1`, `JSON.stringify({id, pass, results, attestedAt})` in that insertion order. Trust profiles: for `insumer-trust-v2`, the domain tag `insumer.trust.v2` + newline + canonical JSON of the whole `trust` object; for `insumer-attest-v1`, `JSON.stringify(trust)` as issued. Verify with any ES256 library + the JWKS key the `kid` names. Every response also carries `pqSig`/`pqKid`, a post-quantum ML-DSA-65 signature over the same preimage under a post-quantum domain tag (spec Check 6).
+1. **`sig` field** (every response): base64 P1363 ES256 signature over the preimage the `kid` selects (see "What's signed" in `references/jwks-format.md`). Attestations: for `insumer-attest-v2`, the domain tag `insumer.attestation.v2` + newline + canonical JSON (keys sorted recursively, no whitespace) of `{v:2, id, pass, results, attestedAt}`; for `insumer-attest-v1`, `JSON.stringify({id, pass, results, attestedAt})` in that insertion order. Trust profiles: for `insumer-trust-v2`, the domain tag `insumer.trust.v2` + newline + canonical JSON of the whole `trust` object; for `insumer-attest-v1`, `JSON.stringify(trust)` as issued. Verify with any ES256 library + the JWKS key the `kid` names. Responses also carry `pqSig`/`pqKid`, a post-quantum ML-DSA-65 signature over the same preimage under a post-quantum domain tag (spec Check 6). The two fields are optional: a stored artifact without them reads as `absent`, which is not a failed signature.
 2. **`jwt` field** *(`/v1/attest` only, and only when `"format": "jwt"` is in the request body; `/v1/trust` and `/v1/trust/batch` have no JWT form)*: standard ES256 JWT carrying the attestation as claims, beside `pqJwt`, the same claims under the post-quantum signature. Verify with any standard JWT library pointed at the JWKS URL.
 
 The `jwt` path is easier when the consumer is already using a JWT library, and it signs the wallet as the `sub` claim. The raw `sig` path is more compact, but for most condition types it does not sign the wallet: it proves that some wallet met the condition, not which one. Use the JWT form (or an `erc8004_agent` / `erc7710_delegation` condition, which carry the wallet in the signed result) whenever the relying party must know which wallet was attested.
@@ -220,7 +220,7 @@ For the raw form, the same loop runs over `data.attestation.results` with `data.
 
 ## Helper script
 
-`scripts/verify.py`: Python helper that takes a JWT, or a response object carrying `jwt` (from `/v1/attest` with `format: "jwt"`), on stdin and verifies the JWT against the public JWKS. Prints `OK` + payload, or `INVALID` + reason. Given a response with no `jwt` it prints `NOT CHECKED` and exits non-zero: that is not a verdict on the response. It does not verify raw `sig` responses (every trust profile, and attestations without `format: "jwt"`), condition hashes, the expiry binding or the post-quantum signature. For every check in Python, `pip install insumer-verify` (above) is the complete path; use Recipe 3 or `insumer-verify` on npm in JavaScript.
+`scripts/verify.py`: Python helper that takes a JWT, or a response object carrying `jwt` (from `/v1/attest` with `format: "jwt"`), on stdin and verifies the JWT against the public JWKS. Prints `OK` + payload, or `INVALID` + reason. Given a response with no `jwt`, or when the signing key cannot be fetched or resolved, it prints `NOT CHECKED` and exits non-zero: that is not a verdict on the token. It does not verify raw `sig` responses (every trust profile, and attestations without `format: "jwt"`), condition hashes, the expiry binding or the post-quantum signature. For every check in Python, `pip install "insumer-verify[pq]"` (above) is the complete path (without the `[pq]` extra the post-quantum signature is reported `unverifiable`); use Recipe 3 or `insumer-verify` on npm in JavaScript.
 
 ```bash
 echo '{"jwt":"eyJhbG...","kid":"insumer-attest-v2"}' | python scripts/verify.py
@@ -230,7 +230,7 @@ echo '{"jwt":"eyJhbG...","kid":"insumer-attest-v2"}' | python scripts/verify.py
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| "unknown kid" | Response signed with a key not in current JWKS | Refresh JWKS cache; if persistent, the key may be rotated: check JWKS URL directly |
+| "unknown kid" | A stale JWKS cache, or a result InsumerAPI did not sign | Refresh the JWKS. Kids are never removed, so one that still does not resolve is unverifiable: do not accept the result |
 | "JWT signature invalid" | Payload tampered, or wrong public key | Confirm `kid` matches a JWKS entry, confirm algorithm pinned to ES256 |
 | "JWT issuer mismatch" | Issuer claim doesn't match `https://api.insumermodel.com` | Confirm response actually came from InsumerAPI |
 | "JWT expired" | Past its `exp` (30 min, or 5 with a delegation condition) | Re-request a fresh attestation; do not extend TTL |

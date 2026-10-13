@@ -23,8 +23,9 @@ be recovered): USDC/USDT on Ethereum (1), Base (8453), Polygon (137),
 Arbitrum (42161), Optimism (10), BNB Chain (56), Avalanche (43114) or Solana;
 USDT-TRC20 on Tron; BTC on Bitcoin.
 
-Volume discounts: $5–$99 → $0.04/credit, $100–$499 → $0.03/credit (25% off),
-                  $500+ → $0.02/credit (50% off).
+Volume discounts: $5–$99 → 25 credits per $1 ($0.04/credit),
+                  $100–$499 → 33 credits per $1 (about $0.03/credit),
+                  $500+ → 50 credits per $1 ($0.02/credit).
 
 appName defaults to "insumer-agent-skills", a label on the key that tells
 InsumerAPI which channel the key came from. Pass --app-name to use your own.

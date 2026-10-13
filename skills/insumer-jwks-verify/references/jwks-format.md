@@ -73,7 +73,7 @@ For `/v1/attest` (raw form), the signed preimage is selected by `data.kid`:
 - `insumer-attest-v1`: the bare `JSON.stringify({ id, pass, results, attestedAt })` in that insertion order.
 - Signed through `results`: every `evaluatedCondition`, `conditionHash`, `met`, and each result's chain anchor (`blockNumber`/`blockTimestamp`, or `slot`, `ledgerIndex`, `blockHeight`, `checkpointSequence`).
 - NOT signed: `expiresAt` (bound to the signed `attestedAt` by spec Check 4), `passCount`/`failCount`, and the wallet itself. For most condition types the raw form does not name the wallet at all. In JWT form the wallet is the signed `sub` claim.
-- Beside `sig`/`kid`, every response also carries `pqSig`/`pqKid` (ML-DSA-65 over the post-quantum domain tag plus the same classical preimage); in JWT form a sibling `pqJwt`.
+- Beside `sig`/`kid`, responses also carry `pqSig`/`pqKid` (ML-DSA-65 over the post-quantum domain tag plus the same classical preimage); in JWT form a sibling `pqJwt`. These fields are optional: a stored artifact without them reads as `absent`.
 
 For `/v1/trust` and `/v1/trust/batch`, selected by `kid`:
 - `insumer-trust-v2`: `"insumer.trust.v2" + "\n" + canonical_json(trust)` where `trust` is the whole returned object (`id`, `wallet`, `conditionSetVersion`, `dimensions`, `summary`, `profiledAt`, `expiresAt`), no `v` member.
@@ -119,7 +119,7 @@ def recompute_condition_hash(evaluated_condition: dict) -> str:
     return "0x" + digest
 ```
 
-**Limit of this function on `insumer-attest-v1` results.** A v1 `threshold` is a JSON number, and Python's `json.dumps` prints a number below `0.0001` differently from JavaScript (for example `0.000001`, which JavaScript writes as `0.000001` and Python as `1e-06`). For such a threshold this function returns a different hash for a genuine response. Use `insumer-verify` (`pip install insumer-verify`) for v1 results; it reproduces JavaScript's number printing. v2 results carry `threshold` as a string and are unaffected.
+**Limit of this function on `insumer-attest-v1` results.** A v1 result carries its numbers as JSON numbers (`threshold`, and `multiple`, `amount` and `minFraction` on the ratio conditions), and Python's `json.dumps` prints a number from `0.000000001` up to, but not including, `0.0001` differently from JavaScript (for example `0.000001`, which JavaScript writes as `0.000001` and Python as `1e-06`). For a value in that range this function returns a different hash for a genuine response. Use `insumer-verify` (`pip install insumer-verify`) for v1 results; it reproduces JavaScript's number printing. v2 results carry these values as strings and are unaffected.
 
 This is belt-and-suspenders: the JWT signature already covers `conditionHash`. It lets a downstream service confirm the exact predicate, not just that *some* result was signed.
 
@@ -136,11 +136,11 @@ Verifiers should:
 
 | Symptom | Likely cause | Action |
 |---|---|---|
-| `unknown kid` after rotation | Stale JWKS cache | Force refresh; if persistent, kid was retired |
+| `unknown kid` | A stale JWKS cache, or a result InsumerAPI did not sign | Force a refresh. Kids are never removed, so one that still does not resolve is unverifiable: do not accept the result |
 | `JWT signature invalid` | Payload tampered or wrong key | Reject; do not retry with different keys |
 | `JWT expired` (`exp` in past) | Past its `exp` (30 min, or 5 with a delegation condition) | Re-request a fresh attestation |
 | `JWT issuer mismatch` | Response not from InsumerAPI | Reject |
-| `algorithm not allowed` | Verifier didn't pin ES256 | Always pass `algorithms: ['ES256']` |
+| `algorithm not allowed` | The token's `alg` is not in the pinned list, typically `pqJwt` (ML-DSA-65) handed to the ES256 recipe | Verify `jwt` with the ES256 recipe; verify `pqJwt` with `insumer-verify` |
 
 ## Library-specific gotchas
 

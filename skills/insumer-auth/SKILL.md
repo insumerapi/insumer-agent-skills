@@ -22,13 +22,13 @@ This skill covers **four** ways to get or extend a key. Pick the one that matche
 | Who's getting the key? | What they want | Path | Endpoint |
 | ----- | ----- | ----- | ----- |
 | **Human**, building or testing | Free starter access (10 free verifications plus 100 requests a day) | **Path 1: Free** | `POST /v1/keys/create` |
-| **Human**, wants Pro/Enterprise tier | Higher limits, bulk credits, monthly billing | **Path 2: Paid (Stripe)** | <https://insumermodel.com/developers/account/> |
+| **Human**, wants Pro/Enterprise tier | Higher limits, bulk credits, monthly billing | **Path 2: Paid (Stripe)** | <https://insumermodel.com/pricing/> for a new key; <https://insumermodel.com/developers/account/> to upgrade an existing one |
 | **Agent** whose operator funds it, **first key** | Bootstrap with no email, sender wallet = identity | **Path 3: Agent onboarding (crypto)** | `POST /v1/keys/buy` |
 | **Agent or human**, **already has a key** | Top up credits, keep the key/history/integrations | **Path 4: Top-up (crypto)** | `POST /v1/credits/buy` |
 
 **Decision rule:** default to Path 1 (free). Use Path 3 or Path 4 only when the user, or the operator of an autonomous agent, has explicitly chosen to pay with crypto. Path 4 tops the key up in place: it keeps its history, tier, and integrations.
 
-**Pay per call, with no key at all:** `POST /v1/attest`, `/v1/trust` and `/v1/trust/batch` accept x402. Called with no credential headers they answer `402 Payment Required` with a quote, not an error about credits. Pay the quote in USDC on Base, Polygon, Arbitrum, Arc or Solana and retry with the `PAYMENT-SIGNATURE` header; the quote carries the exact amount. The payer is charged only for a successful answer, and the payer sees the answer only after the payment settled. Like the on-chain paths, it needs the user's explicit approval of the payment. The skills in this repo call with a key.
+**Pay per call, with no key at all:** `POST /v1/attest`, `/v1/trust` and `/v1/trust/batch` accept x402. Called with no credential headers they answer `402 Payment Required` with a quote, not an error about credits. Pay the quote in USDC on Base, Polygon, Arbitrum, Arc or Solana and retry with the `PAYMENT-SIGNATURE` header; the quote carries the exact amount. The payer is charged only for a successful answer, and the payer sees the answer only after the payment settled. If a paid call answers `503`, retry the exact same request with the same payment header and do not sign a new authorization: on Arc the payment may still be settling, and the retry resolves to the same payment. Like the on-chain paths, it needs the user's explicit approval of the payment. The skills in this repo call with a key.
 
 **Payments need explicit approval (never violate).** Paths 3 and 4 start with a real, irreversible transfer of funds. Never send, or prepare for signing, any payment unless the user has confirmed the amount, token, chain and recipient address in this session. This skill documents the calls; it does not authorize a payment.
 
@@ -40,7 +40,7 @@ This skill covers **four** ways to get or extend a key. Pick the one that matche
 - **Platform wallet, Solana**: `6a1mLjefhvSJX1sEX8PTnionbE9DqoYjU6F6bNkT4Ydr`
 - **Platform wallet, Bitcoin**: `bc1qg7qnerdhlmdn899zemtez5tcx2a2snc0dt9dt0`
 - **Platform wallet: Tron**: `TC5yvwkAMakkXtUxYiu2Yn1xbBcwYuD6cn`
-- **Volume discounts** (paths 3 and 4): $5–$99 → $0.04/credit, $100–$499 → $0.03/credit (25% off), $500+ → $0.02/credit (50% off). The price is per credit, not per call: an attestation costs 1 credit and a trust profile 3 (2 and 6 with `proof: "merkle"`)
+- **Volume discounts** (paths 3 and 4): $5–$99 → 25 credits per $1 ($0.04/credit), $100–$499 → 33 credits per $1 (about $0.03/credit), $500+ → 50 credits per $1 ($0.02/credit). The price is per credit, not per call: an attestation costs 1 credit and a trust profile 3 (2 and 6 with `proof: "merkle"`)
 - **Supported payment chains (these ten and no others)**: USDC/USDT on Ethereum (1), Base (8453), Polygon (137), Arbitrum (42161), Optimism (10), BNB Chain (56), Avalanche (43114) or Solana; USDT-TRC20 on Tron; BTC on Bitcoin (1 confirmation, market-rate USD conversion). The other chains the API can read are NOT payment chains, and funds sent on a chain outside this list cannot be recovered
 
 ---
@@ -55,7 +55,7 @@ curl -s -X POST https://api.insumermodel.com/v1/keys/create \
   -d '{"email":"you@example.com","appName":"insumer-agent-skills","tier":"free"}'
 ```
 
-Default `appName` to `"insumer-agent-skills"` unless the user names their app. It is a label on the key that tells InsumerAPI which channel the key came from; the user can rename the key later in the developer portal.
+Default `appName` to `"insumer-agent-skills"` unless the user names their app. It is a label on the key that tells InsumerAPI which channel the key came from.
 
 Response:
 
@@ -63,7 +63,7 @@ Response:
 {
   "success": true,
   "key": "insr_live_...",
-  "name": "my-app",
+  "name": "insumer-agent-skills",
   "tier": "free",
   "dailyLimit": 100,
   "apiKeyCredits": 10
@@ -85,7 +85,7 @@ export INSUMER_API_KEY='insr_live_...'
 
 ## Path 2: Paid first key (human, Stripe checkout)
 
-Pro and Enterprise tiers (higher daily limits, bulk credits, monthly billing) go through Stripe checkout at <https://insumermodel.com/developers/account/>. Signed in to that page with an existing key, the upgrade applies to that key and keeps it; with no key it creates a new one.
+Pro and Enterprise tiers (higher daily limits, bulk credits, monthly billing) go through Stripe checkout. A new paid key starts from <https://insumermodel.com/pricing/>. To upgrade an existing key, paste it at <https://insumermodel.com/developers/account/>: the upgrade applies to that key and keeps it.
 
 Use this path **only** when the user explicitly asks about paid tiers, SLAs, monthly billing, or wants a higher-tier key from scratch. Don't recommend it as a default.
 
@@ -118,7 +118,7 @@ Default `appName` to `"insumer-agent-skills"` as in Path 1, unless the user name
 Fields:
 - `txHash`: the transaction proving payment
 - `chainId`: the chain the payment was sent on (use `"solana"`, `"bitcoin"` or `"tron"` for non-EVM)
-- `appName`: name for the new key (default `"insumer-agent-skills"`)
+- `appName`: required. Name for the new key (the skills send `"insumer-agent-skills"`)
 - `amount`: stablecoin amount sent (minimum 5). Optional for BTC (USD value derived from on-chain amount at market rate)
 - `keyDelivery`: optional. Send `"apiKey"` to receive the key string. With the default, `"wallet"`, an EVM payment that issues an Insumer Access pass to the paying wallet returns **no key**: that wallet authenticates with `Authorization: Wallet` instead (see `authHint` in the response). Send `"apiKey"` whenever the key string is needed.
 
@@ -130,7 +130,7 @@ Response:
   "data": {
     "success": true,
     "key": "insr_live_...",
-    "name": "my-agent",
+    "name": "insumer-agent-skills",
     "tier": "paid",
     "dailyLimit": 10000,
     "creditsAdded": 250,
@@ -242,7 +242,7 @@ curl -s https://api.insumermodel.com/v1/credits \
 | `402` | `/v1/attest`, `/v1/trust`, `/v1/trust/batch` | With a key: out of credits. With no key at all: a pay-per-call quote, not a credit problem | With a key, Path 4 top-up (with approval) or Path 2 (human). With no key, set `INSUMER_API_KEY` and call again |
 | `403` | `/v1/credits/buy` | Payment sender is not the wallet registered to this key | Send from the registered wallet, or add `"updateWallet": true` |
 | `409` | `/v1/keys/create` | Free key already exists for this email | Reuse existing key |
-| `409` | `/v1/keys/buy` | Wallet already has a key, or txHash already used | Top up via Path 4 instead |
+| `409` | `/v1/keys/buy` | Wallet already has a key, or txHash already used | Wallet already has a key: top up via Path 4 instead (the same transaction can be used). txHash already used: that payment is spent, a new payment is needed |
 | `422` | `/v1/keys/buy`, `/v1/credits/buy` | On-chain verification failed | Wait for confirmations, verify chain & amount |
 | `429` | `/v1/keys/create` | 3 keys per IP per 24h, or free-key creation paused for the day | Wait 24h |
 | `429` | any keyed endpoint | Daily request limit (100/day on free) | Wait for reset (`Retry-After`), or upgrade tier |

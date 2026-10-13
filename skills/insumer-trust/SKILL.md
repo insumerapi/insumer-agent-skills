@@ -121,7 +121,7 @@ The first two `account` rows of that profile, as signed:
 {"label":"EIP-7702 delegation on Ethereum","chainId":1,"met":false,"evaluatedCondition":{"type":"account_code","chainId":1,"expect":"eip7702","operator":"code_state"},"conditionHash":"0xdef6fadcef95f59f4621fa2bf788e6be0ffc0492dba22038999b8cd757adf18b","blockNumber":"0x18eea5a","blockTimestamp":"2026-10-07T21:52:59.000Z"}
 ```
 
-### Example 2: With Solana USDC
+### Example 2: With a Solana wallet
 
 ```bash
 curl -X POST https://api.insumermodel.com/v1/trust \
@@ -129,7 +129,7 @@ curl -X POST https://api.insumermodel.com/v1/trust \
   -H "Content-Type: application/json" \
   -d '{
     "wallet": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-    "solanaWallet": "5xY...solanaAddress"
+    "solanaWallet": "DXK4yMpigbTSqv33nJk1tJucXB4E3rDmTXn3yZmiFAXt"
   }'
 ```
 
@@ -141,7 +141,7 @@ curl -X POST https://api.insumermodel.com/v1/trust \
   -H "Content-Type: application/json" \
   -d '{
     "wallet": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-    "solanaWallet": "5xY...solanaAddress",
+    "solanaWallet": "DXK4yMpigbTSqv33nJk1tJucXB4E3rDmTXn3yZmiFAXt",
     "xrplWallet": "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
     "bitcoinWallet": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"
   }'

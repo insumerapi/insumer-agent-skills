@@ -73,6 +73,10 @@ def main() -> int:
             algorithms=ALGORITHMS,
             issuer=ISSUER,
         )
+    except jwt.PyJWKClientError as e:
+        print(f"NOT CHECKED: the signing key could not be fetched or resolved ({e}). "
+              "This is not a verdict on the token. A pqJwt is verified with insumer-verify, not here.", file=sys.stderr)
+        return 1
     except jwt.InvalidIssuerError as e:
         print(f"INVALID: issuer mismatch: {e}", file=sys.stderr)
         return 1

@@ -140,12 +140,12 @@ python scripts/discount.py --merchant acme-store --wallet 0xd8dA...6045 --create
 | `401` | Missing API key, or a `walletProof` that was refused | See `insumer-auth`; re-sign a fresh message |
 | `402` | The API key that owns the store has no credits left | If the store is the caller's own, top up (Path 4 in `insumer-auth`). Otherwise nothing the caller can do; tell the user |
 | `403` | The store has not enabled app access, or has no active owner key | Nothing the caller can do |
-| `404` | Merchant not found | Check the merchant ID |
+| `404` | Merchant not found. `GET /v1/merchants/{merchantId}` also answers `404` for a store that is paused or not listed in the public directory | Check the merchant ID, then run the free check, which answers for those stores |
 | `409` | The store's recognition is paused by its owner | No code is created and no credit is used; tell the user |
 | `429` | The key's daily limit; the store's daily limit for an unproven wallet; or the hourly limit on discount codes requested with a key other than the store owner's | For the store's daily limit, prove the wallet (the limit does not apply to a proven wallet) or try after 00:00 UTC. For the hourly limit, wait the time the message gives: proving the wallet does not lift it |
-| `503` | A read did not complete (`rpc_failure`) | Retry after a short delay; no credit used |
+| `503` | A read did not complete (`rpc_failure`) | Retry after a short delay; no credit used. With a `walletProof`, sign a fresh message first: the nonce in the refused request has been used |
 
-A `503` with `rpc_failure` is never "not eligible". Retry the call.
+A `503` with `rpc_failure` is never "not eligible". Retry the call, with a freshly signed message if the request carried a `walletProof`.
 
 ## Related skills
 

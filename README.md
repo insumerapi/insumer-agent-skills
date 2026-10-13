@@ -17,7 +17,7 @@ OAuth proves who the user is. **Wallet auth proves what the wallet holds.** Insu
 
 1. **Read**: InsumerAPI reads the wallet's on-chain state on the requested chain
 2. **Evaluate**: wallet state is checked against the condition
-3. **Sign**: a boolean result is returned, ES256-signed, with a `conditionHash` for tamper detection
+3. **Sign**: a boolean result is returned, signed twice, with a `conditionHash` for tamper detection
 
 **No secrets. No identity-first. No static credentials.** Token gating is one form of condition-based access; this is the general primitive.
 
@@ -139,7 +139,7 @@ The skills are instructions plus small helper scripts. There are no hooks, no MC
 | `insumer-auth/scripts/buy_credits.py` | `POST https://api.insumermodel.com/v1/credits/buy` | `INSUMER_API_KEY`, plus `txHash`, `chainId`, `amount` unless paying in BTC, optional `updateWallet` |
 | `insumer-attest/scripts/attest.py` | `POST https://api.insumermodel.com/v1/attest` | `INSUMER_API_KEY` and the request body you provide |
 | `insumer-trust/scripts/trust.py` | `POST https://api.insumermodel.com/v1/trust` | `INSUMER_API_KEY`, the wallet addresses you pass, and optional `proof: "merkle"` |
-| `insumer-trust-batch/scripts/trust_batch.py` | `POST https://api.insumermodel.com/v1/trust/batch` | `INSUMER_API_KEY`, the wallet addresses you pass, and optional `proof: "merkle"`. Unless `--full` is given, it also saves the signed response to a local JSON file (`--out`, default `trust_batch_<time>.json` in the working directory) |
+| `insumer-trust-batch/scripts/trust_batch.py` | `POST https://api.insumermodel.com/v1/trust/batch` | `INSUMER_API_KEY`, the wallet addresses you pass, and optional `proof: "merkle"`. It always saves the signed response to a local JSON file (`--out`, default `trust_batch_<time>.json` in the working directory) |
 | `insumer-jwks-verify/scripts/verify.py` | `GET https://insumermodel.com/.well-known/jwks.json` | Nothing; it fetches the public keys and verifies locally |
 | `insumer-discount/scripts/proof_message.py` | Nothing | Nothing; it prints a message for the wallet to sign. It never signs and never handles a key |
 | `insumer-discount/scripts/discount.py` | `GET https://api.insumermodel.com/v1/merchants/{id}`, `GET .../v1/discount/check`, and with `--create`, `POST .../v1/verify` | The merchant ID and wallet address you pass; with `--create`, also `INSUMER_API_KEY` and the signed proof you pass in `--proof-file` |
@@ -158,7 +158,7 @@ The skills also show `GET https://api.insumermodel.com/v1/credits` (balance chec
 - **OpenAPI spec**: <https://insumermodel.com/openapi.yaml>
 - **Public JWKS**: <https://insumermodel.com/.well-known/jwks.json>
 - **Developer docs**: <https://insumermodel.com/developers/api-reference/>
-- **Pricing & paid tiers**: <https://insumermodel.com/developers/account/>
+- **Pricing & paid tiers**: <https://insumermodel.com/pricing/>
 - **MCP server (alternative agent surface)**: [`mcp-server-insumer`](https://github.com/insumerapi/mcp-server-insumer)
 
 ## License

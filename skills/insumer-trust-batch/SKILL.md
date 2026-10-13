@@ -56,11 +56,11 @@ export INSUMER_API_KEY='insr_live_...'
 | `stellarWallet` | optional | Evaluates the Stellar rows in the institutional stablecoins dimension; adds no dimension |
 | `suiWallet` | optional | Evaluates the Sui rows (USDC in institutional stablecoins, USDY in tokenized treasuries); adds no dimension |
 
-Top-level `proof: "merkle"` (optional) applies to all wallets in the batch and costs 6 credits per wallet.
+Top-level `proof: "merkle"` (optional) applies to all wallets in the batch and costs up to 6 credits per successful wallet (3 for a wallet whose profile carried no proof; a failed wallet costs nothing).
 
 ## Response shape
 
-Abbreviated; the ids and counts are from a real batch of the two wallets above (the first with its Solana wallet, so its profile has 11 dimensions and 169 checks; the second has the 10 base dimensions and 155 checks):
+Abbreviated; the profile ids and counts are from real profiles of the two wallets above, and the batch totals are those of a two-wallet call (the first with its Solana wallet, so its profile has 11 dimensions and 169 checks; the second has the 10 base dimensions and 155 checks):
 
 ```json
 {
@@ -185,7 +185,7 @@ Cost: up to `successful_wallets * 6` credits; a wallet whose profile carried no 
 
 ## Helper script
 
-`scripts/trust_batch.py`: Python helper. Reads `INSUMER_API_KEY` from env, accepts a wallet list via `--wallets-file` (one EVM address per line) or `--wallets w1,w2,w3`. Builds the proper array-of-objects request body.
+`scripts/trust_batch.py`: Python helper. Reads `INSUMER_API_KEY` from env, accepts a wallet list via `--wallets-file` (one EVM address or one JSON object per line) or `--wallets w1,w2,w3`. Builds the proper array-of-objects request body.
 
 ```bash
 python scripts/trust_batch.py --wallets-file allowlist.txt
@@ -193,7 +193,7 @@ python scripts/trust_batch.py --wallets-file allowlist.txt
 
 The script prints a summary per wallet (profile ID, held / not held / not evaluated counts, and the checks held in each dimension) and saves the complete signed response to a JSON file named in the summary; `--out PATH` chooses the file. The dimensions print in a fixed order, the same for every wallet: the ten base dimensions (`stablecoins` through `names`, then `account`), then `solana`, `xrpl`, `bitcoin`, `tron` where present. The `account` dimension reads "present" rather than "held" (its rows are code states at the wallet address, not holdings): for example `account: 5 of 10 present: Contract code on Ethereum, Contract code on Base, ...`. Read the summary to answer the user, and verify each entry of `data.results` in the saved file on the raw `sig` path (for example `verify_trust_profile` from the `insumer-verify` package, or the raw-sig instructions in `insumer-jwks-verify`). The script never overwrites a file; if it cannot save one, it prints the complete response instead, so a paid call is never lost. A full profile is tens of thousands of characters, so ten printed in full are more than an agent can read at once; `--full` prints the complete response as well as saving it. Profiles cannot be fetched again, so keep the saved file rather than calling a second time.
 
-For per-wallet cross-chain coverage, edit the script's `--wallets-file` to use JSON-line format (one object per line) or call the API directly with curl.
+For per-wallet cross-chain coverage, put one JSON object per line in the `--wallets-file` (for example `{"wallet": "0x...", "solanaWallet": "..."}`), or call the API directly with curl.
 
 ## Error handling
 
