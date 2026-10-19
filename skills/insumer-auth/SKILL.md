@@ -7,7 +7,7 @@ description: >
   paid on-chain, and an on-chain top-up of an existing key. The on-chain paths
   need the user's explicit approval of every payment.
 metadata:
-  version: "0.2.1"
+  version: "0.2.2"
   author: InsumerAPI
 ---
 
@@ -36,8 +36,10 @@ This skill covers **four** ways to get or extend a key. Pick the one that matche
 
 - **API base**: `https://api.insumermodel.com`
 - **Auth header**: `X-API-Key: insr_live_...`
-- **Platform wallet, EVM**: `0xAd982CB19aCCa2923Df8F687C0614a7700255a23`
-- **Platform wallet, Solana**: `6a1mLjefhvSJX1sEX8PTnionbE9DqoYjU6F6bNkT4Ydr`
+- **Platform wallet, USDC on Ethereum, Base, Polygon, Arbitrum, Optimism or Avalanche**: `0xee432065474D2C852700f74e3fD81e2Bcc16a3D4`
+- **Platform wallet, USDT on any EVM chain, and USDC or USDT on BNB Chain**: `0xAd982CB19aCCa2923Df8F687C0614a7700255a23`
+- **Platform wallet, USDC on Solana**: `8fyEGM5tRjMocKQWaVXyM2XvvnTxR3sWdrYtug2zeLX4`
+- **Platform wallet, USDT on Solana**: `6a1mLjefhvSJX1sEX8PTnionbE9DqoYjU6F6bNkT4Ydr`
 - **Platform wallet, Bitcoin**: `bc1qg7qnerdhlmdn899zemtez5tcx2a2snc0dt9dt0`
 - **Platform wallet: Tron**: `TC5yvwkAMakkXtUxYiu2Yn1xbBcwYuD6cn`
 - **Volume discounts** (paths 3 and 4): $5–$99 → 25 credits per $1 ($0.04/credit), $100–$499 → 33 credits per $1 (about $0.03/credit), $500+ → 50 credits per $1 ($0.02/credit). The price is per credit, not per call: an attestation costs 1 credit and a trust profile 3 (2 and 6 with `proof: "merkle"`)
@@ -218,7 +220,7 @@ Expected: `{"ok":true,"data":{"apiKeyCredits":<n>,"tier":"...","dailyLimit":<n>}
 3. Verify with `GET /v1/credits`
 
 ### Agent setup from cold start (operator-funded agent)
-1. The operator approves the payment: amount, token, chain and recipient (for example $10 USDC on Base to `0xAd982CB19aCCa2923Df8F687C0614a7700255a23`)
+1. The operator approves the payment: amount, token, chain and recipient (for example $10 USDC on Base to `0xee432065474D2C852700f74e3fD81e2Bcc16a3D4`)
 2. The payment is sent, then the agent calls Path 3 (`POST /v1/keys/buy`) with the txHash and `"keyDelivery": "apiKey"`
 3. Agent stores the returned `key` to its persistent secret store
 
