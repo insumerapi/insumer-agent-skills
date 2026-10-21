@@ -7,7 +7,7 @@ description: >
   paid on-chain, and an on-chain top-up of an existing key. The on-chain paths
   need the user's explicit approval of every payment.
 metadata:
-  version: "0.2.2"
+  version: "0.2.3"
   author: InsumerAPI
 ---
 
@@ -36,14 +36,13 @@ This skill covers **four** ways to get or extend a key. Pick the one that matche
 
 - **API base**: `https://api.insumermodel.com`
 - **Auth header**: `X-API-Key: insr_live_...`
+- **Purchases are paid in USDC only.** Payments on Bitcoin or Tron, and USDT or any other token, are refused with a `400`
 - **Platform wallet, USDC on Ethereum, Base, Polygon, Arbitrum, Optimism or Avalanche**: `0xee432065474D2C852700f74e3fD81e2Bcc16a3D4`
-- **Platform wallet, USDT on any EVM chain, and USDC or USDT on BNB Chain**: `0xAd982CB19aCCa2923Df8F687C0614a7700255a23`
-- **Platform wallet, USDC on Solana**: `8fyEGM5tRjMocKQWaVXyM2XvvnTxR3sWdrYtug2zeLX4`
-- **Platform wallet, USDT on Solana**: `6a1mLjefhvSJX1sEX8PTnionbE9DqoYjU6F6bNkT4Ydr`
-- **Platform wallet, Bitcoin**: `bc1qg7qnerdhlmdn899zemtez5tcx2a2snc0dt9dt0`
-- **Platform wallet: Tron**: `TC5yvwkAMakkXtUxYiu2Yn1xbBcwYuD6cn`
+- **Platform wallet, USDC on BNB Chain**: `0xAd982CB19aCCa2923Df8F687C0614a7700255a23`. This previous address also still takes USDC on the other EVM chains during the changeover; it takes no USDT
+- **Platform wallet, USDC on Solana**: `8fyEGM5tRjMocKQWaVXyM2XvvnTxR3sWdrYtug2zeLX4`. The previous Solana address `6a1mLjefhvSJX1sEX8PTnionbE9DqoYjU6F6bNkT4Ydr` still takes USDC during the changeover; it takes no USDT
 - **Volume discounts** (paths 3 and 4): $5–$99 → 25 credits per $1 ($0.04/credit), $100–$499 → 33 credits per $1 (about $0.03/credit), $500+ → 50 credits per $1 ($0.02/credit). The price is per credit, not per call: an attestation costs 1 credit and a trust profile 3 (2 and 6 with `proof: "merkle"`)
-- **Supported payment chains (these ten and no others)**: USDC/USDT on Ethereum (1), Base (8453), Polygon (137), Arbitrum (42161), Optimism (10), BNB Chain (56), Avalanche (43114) or Solana; USDT-TRC20 on Tron; BTC on Bitcoin (1 confirmation, market-rate USD conversion). The other chains the API can read are NOT payment chains, and funds sent on a chain outside this list cannot be recovered
+- **Supported payment chains (these eight and no others)**: USDC on Ethereum (1), Base (8453), Polygon (137), Arbitrum (42161), Optimism (10), BNB Chain (56), Avalanche (43114) or Solana (`"solana"`). The other chains the API can read, Bitcoin and Tron included, are NOT payment chains, and funds sent on a chain outside this list cannot be recovered
+- **Sender signature** (Path 3 always; Path 4 when the payment registers a wallet to the key): the wallet that sent the payment signs a fixed five-line text naming the payment, and the signature goes in `senderSignature`. See [Sign the sender text](#sign-the-sender-text)
 
 ---
 
@@ -95,13 +94,17 @@ Use this path **only** when the user explicitly asks about paid tiers, SLAs, mon
 
 ## Path 3: Agent first key (crypto, no email)
 
-For an agent whose operator has chosen to fund it. After the user approves the payment, USDC, USDT, or BTC goes to the platform wallet, then the agent calls `POST /v1/keys/buy` with the transaction hash. **No email or prior authentication needed**: the sender wallet address from the transaction becomes the key's identity.
+For an agent whose operator has chosen to fund it. After the user approves the payment, USDC goes to the platform wallet, then the agent calls `POST /v1/keys/buy` with the transaction hash and the paying wallet's signature. **No email or prior authentication needed**: the sender wallet address from the transaction becomes the key's identity, and that wallet signs a short text to confirm it sent the payment.
 
 ### Step 1: Send payment
 
-Send the desired amount (minimum $5) of USDC, USDT, or BTC to the platform wallet on one of the ten supported payment chains listed above (USDT-TRC20 on Tron included). For EVM and Solana the address is the literal `recipient`; for BTC, send to the Bitcoin address; for Tron, send to the Tron address.
+Send the desired amount (minimum $5) of USDC to the platform wallet for that chain, on one of the eight supported payment chains listed above. The address is the literal `recipient`.
 
-### Step 2: Call `/v1/keys/buy` with the transaction hash
+### Step 2: Sign the sender text
+
+The wallet that sent the payment signs the text in [Sign the sender text](#sign-the-sender-text), with `Purpose: key purchase`. To get the exact text, call Step 3 without `senderSignature`: the `400` carries it, and the payment is not used.
+
+### Step 3: Call `/v1/keys/buy` with the transaction hash and the signature
 
 ```bash
 curl -s -X POST https://api.insumermodel.com/v1/keys/buy \
@@ -110,6 +113,7 @@ curl -s -X POST https://api.insumermodel.com/v1/keys/buy \
     "txHash": "0xabc...",
     "chainId": 8453,
     "amount": 10,
+    "senderSignature": "0x...",
     "appName": "insumer-agent-skills",
     "keyDelivery": "apiKey"
   }'
@@ -119,9 +123,10 @@ Default `appName` to `"insumer-agent-skills"` as in Path 1, unless the user name
 
 Fields:
 - `txHash`: the transaction proving payment
-- `chainId`: the chain the payment was sent on (use `"solana"`, `"bitcoin"` or `"tron"` for non-EVM)
+- `chainId`: the chain the payment was sent on: the numeric chain ID for EVM, or `"solana"`
 - `appName`: required. Name for the new key (the skills send `"insumer-agent-skills"`)
-- `amount`: stablecoin amount sent (minimum 5). Optional for BTC (USD value derived from on-chain amount at market rate)
+- `amount`: required. USDC amount sent (minimum 5)
+- `senderSignature`: required. The paying wallet's signature over the sender text (see [Sign the sender text](#sign-the-sender-text))
 - `keyDelivery`: optional. Send `"apiKey"` to receive the key string. With the default, `"wallet"`, an EVM payment that issues an Insumer Access pass to the paying wallet returns **no key**: that wallet authenticates with `Authorization: Wallet` instead (see `authHint` in the response). Send `"apiKey"` whenever the key string is needed.
 
 Response:
@@ -148,7 +153,7 @@ Response:
 }
 ```
 
-The agent stores `data.key` in its secret store; that's its persistent identity going forward. BTC payments return `btcPaid`, `btcPrice` and `usdEquivalent` instead of `usdcPaid`. One key per sender wallet address (returns `409` if the wallet already has a key).
+The agent stores `data.key` in its secret store; that's its persistent identity going forward. One key per sender wallet address (returns `409` if the wallet already has a key).
 
 **Important:** crypto sent on unsupported chains or to the wrong address cannot be recovered. All purchases are final.
 
@@ -160,7 +165,7 @@ When an existing key (free, paid, or agent-onboarded) runs low on credits, top i
 
 ### Step 1: Send payment to the platform wallet
 
-Same wallets as Path 3.
+Same wallets and chains as Path 3: USDC only.
 
 ### Step 2: Call `/v1/credits/buy`
 
@@ -177,10 +182,13 @@ curl -s -X POST https://api.insumermodel.com/v1/credits/buy \
 
 Required fields:
 - `txHash`: the transaction proving payment
-- `chainId`: the chain the payment was sent on
-- `amount`: stablecoin amount sent (minimum 5). Required except for BTC.
+- `chainId`: the chain the payment was sent on: the numeric chain ID for EVM, or `"solana"`
+- `amount`: USDC amount sent (minimum 5)
 
-Sender verification: the **first** top-up registers the sender wallet to the key. Subsequent top-ups must come from the **same** sender. To replace the registered wallet, include `"updateWallet": true` and send from the new wallet: the verified transfer proves ownership.
+Sometimes required:
+- `senderSignature`: the paying wallet's signature over the sender text, with `Purpose: credit purchase` (see [Sign the sender text](#sign-the-sender-text)). Required when the key has no registered wallet yet, and with `"updateWallet": true` from a different wallet. A top-up from the wallet already registered needs none.
+
+Sender verification: the **first** top-up registers the sender wallet to the key, and that wallet signs the sender text. Subsequent top-ups must come from the **same** sender. To replace the registered wallet, send from the new wallet and include `"updateWallet": true` and a `senderSignature` from the new wallet.
 
 Response:
 
@@ -198,6 +206,32 @@ Response:
 ```
 
 This path keeps the same key. Mention it when the user asks how an agent can pay for its own access.
+
+---
+
+## Sign the sender text
+
+A transaction hash is public, so the API asks the wallet that sent the payment to sign a fixed text naming it. The API builds the text and checks the signature against the sender it read from the chain, never against an address the caller states. The text is five lines joined by `\n`, with no trailing newline:
+
+```
+api.insumermodel.com
+Confirm the wallet that sent this payment.
+Purpose: key purchase
+Chain: eip155:8453
+Transaction: 0xabc...
+```
+
+- `Purpose`: `key purchase` for `/v1/keys/buy`, `credit purchase` for `/v1/credits/buy`
+- `Chain`: `eip155:<chainId>` for an EVM chain (for example `eip155:8453` for Base), or `solana`
+- `Transaction`: the transaction id. EVM: `0x` plus the hash in lowercase hex. Solana: the signature as given
+
+The simplest way to get the text exactly right: send the request without `senderSignature`. The API answers `400` with the exact text after a blank line, and the payment is not used. `scripts/buy_key.py` and `scripts/buy_credits.py` print it for you.
+
+How to sign:
+- **EVM**: EIP-191 `personal_sign` over the text (the wallet's "sign message"). Send the `0x` hex signature. Smart-contract wallets are accepted (ERC-1271)
+- **Solana**: the wallet's `signMessage` over the UTF-8 text. Send the signature in base58 or base64
+
+The user signs with their own wallet tooling; these skills never sign. Signing moves no funds, but it is the user's wallet: show the user the exact text before it is signed.
 
 ---
 
@@ -221,12 +255,13 @@ Expected: `{"ok":true,"data":{"apiKeyCredits":<n>,"tier":"...","dailyLimit":<n>}
 
 ### Agent setup from cold start (operator-funded agent)
 1. The operator approves the payment: amount, token, chain and recipient (for example $10 USDC on Base to `0xee432065474D2C852700f74e3fD81e2Bcc16a3D4`)
-2. The payment is sent, then the agent calls Path 3 (`POST /v1/keys/buy`) with the txHash and `"keyDelivery": "apiKey"`
-3. Agent stores the returned `key` to its persistent secret store
+2. The payment is sent, and the paying wallet signs the sender text (`Purpose: key purchase`)
+3. The agent calls Path 3 (`POST /v1/keys/buy`) with the txHash, `amount`, `senderSignature` and `"keyDelivery": "apiKey"`
+4. Agent stores the returned `key` to its persistent secret store
 
 ### Agent runs out of credits mid-task
 1. The operator approves a top-up, sent **from the same sender wallet that bought the original key**
-2. Agent calls Path 4 (`POST /v1/credits/buy`) with the txHash and amount, using its existing key
+2. Agent calls Path 4 (`POST /v1/credits/buy`) with the txHash and amount, using its existing key (no `senderSignature` needed from the registered wallet)
 3. Credits increment; key, history, and tier preserved
 
 ### Check credit balance
@@ -240,13 +275,18 @@ curl -s https://api.insumermodel.com/v1/credits \
 | Status | Endpoint | Cause | Fix |
 |---|---|---|---|
 | `400` | any | Missing required fields | Check request body |
+| `400` | `/v1/keys/buy`, `/v1/credits/buy` | Not paid in USDC on an accepted chain: Bitcoin, Tron, USDT, another token, or another `chainId` | Purchases are USDC only, on the eight payment chains above |
+| `400` | `/v1/keys/buy`, `/v1/credits/buy` | `senderSignature` missing or not a string. The message carries the exact text to sign | Have the paying wallet sign that text, then send the same request with `senderSignature`. The payment has not been used |
 | `401` | any auth'd | `X-API-Key` missing or invalid (on the three endpoints in the next row, a request with no key at all gets a `402` instead) | Verify env var, check spelling |
 | `402` | `/v1/attest`, `/v1/trust`, `/v1/trust/batch` | With a key: out of credits. With no key at all: a pay-per-call quote, not a credit problem | With a key, Path 4 top-up (with approval) or Path 2 (human). With no key, set `INSUMER_API_KEY` and call again |
-| `403` | `/v1/credits/buy` | Payment sender is not the wallet registered to this key | Send from the registered wallet, or add `"updateWallet": true` |
+| `403` | `/v1/keys/buy`, `/v1/credits/buy` | `senderSignature` does not match the wallet that sent the payment. The message repeats the text to sign | Sign that exact text with the wallet that sent the payment, and retry |
+| `403` | `/v1/credits/buy` | Payment sender is not the wallet registered to this key | Send from the registered wallet, or add `"updateWallet": true` and a `senderSignature` from the new wallet |
 | `409` | `/v1/keys/create` | Free key already exists for this email | Reuse existing key |
 | `409` | `/v1/keys/buy` | Wallet already has a key, or txHash already used | Wallet already has a key: top up via Path 4 instead (the same transaction can be used). txHash already used: that payment is spent, a new payment is needed |
 | `422` | `/v1/keys/buy`, `/v1/credits/buy` | On-chain verification failed | Wait for confirmations, verify chain & amount |
+| `422` | `/v1/keys/buy`, `/v1/credits/buy` | The wallet that sent the payment could not be determined, so the payment cannot be bound to a key | Send the next payment as a plain USDC transfer from one wallet. For the payment already sent, write to support@insumermodel.com with the transaction id |
 | `429` | `/v1/keys/create` | 3 keys per IP per 24h, or free-key creation paused for the day | Wait 24h |
+| `503` | `/v1/keys/buy`, `/v1/credits/buy` | The chain read, or a smart-wallet (ERC-1271) signature check, could not be completed. The payment has not been used | Retry the same request in a few seconds |
 | `429` | any keyed endpoint | Daily request limit (100/day on free) | Wait for reset (`Retry-After`), or upgrade tier |
 
 ## Key hygiene (never violate)
@@ -264,7 +304,12 @@ curl -s https://api.insumermodel.com/v1/credits \
 python scripts/create_key.py --email you@example.com
 ```
 
-For Path 3 (`/v1/keys/buy`) and Path 4 (`/v1/credits/buy`), the payment itself is made with the user's own wallet tooling, after their approval; these skills never sign or send a transaction. To submit the resulting transaction hash, the `curl` shapes above are sufficient, or use `scripts/buy_key.py` and `scripts/buy_credits.py`.
+For Path 3 (`/v1/keys/buy`) and Path 4 (`/v1/credits/buy`), the payment itself is made with the user's own wallet tooling, after their approval; these skills never sign or send a transaction, and never sign the sender text. To submit the resulting transaction hash, the `curl` shapes above are sufficient, or use `scripts/buy_key.py` and `scripts/buy_credits.py`. Run either one without `--sender-signature` when a signature is needed: it prints the exact text to sign and how to sign it, and the payment is not used. Then run the same command again with `--sender-signature <signature>`.
+
+```bash
+python scripts/buy_key.py --tx 0xabc... --chain 8453 --amount 10
+python scripts/buy_key.py --tx 0xabc... --chain 8453 --amount 10 --sender-signature 0x...
+```
 
 ## Related skills
 

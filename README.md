@@ -25,7 +25,7 @@ OAuth proves who the user is. **Wallet auth proves what the wallet holds.** Insu
 
 | Skill | What it does | Version |
 | ----- | ------------ | ------- |
-| [insumer-auth](skills/insumer-auth/) | Free API key creation, env var setup, credit balance | 0.2.1 |
+| [insumer-auth](skills/insumer-auth/) | Free API key creation, env var setup, credit balance | 0.2.3 |
 | [insumer-attest](skills/insumer-attest/) | Custom condition attestation across 37 chains, ten condition types (`/v1/attest`) | 0.3.1 |
 | [insumer-trust](skills/insumer-trust/) | Curated wallet trust profile, 155 base checks across 27 chains in 10 dimensions (`/v1/trust`) | 0.3.1 |
 | [insumer-trust-batch](skills/insumer-trust-batch/) | Batch trust profiles for multiple wallets (`/v1/trust/batch`) | 0.4.3 |
@@ -135,8 +135,8 @@ The skills are instructions plus small helper scripts. There are no hooks, no MC
 | Script | Calls | Sends |
 | ------ | ----- | ----- |
 | `insumer-auth/scripts/create_key.py` | `POST https://api.insumermodel.com/v1/keys/create` | `email` (yours), `appName`, `tier: "free"`; no key needed |
-| `insumer-auth/scripts/buy_key.py` | `POST https://api.insumermodel.com/v1/keys/buy` | `txHash`, `chainId`, `appName` (default `"insumer-agent-skills"`), `keyDelivery: "apiKey"`, and `amount` unless paying in BTC; no key needed |
-| `insumer-auth/scripts/buy_credits.py` | `POST https://api.insumermodel.com/v1/credits/buy` | `INSUMER_API_KEY`, plus `txHash`, `chainId`, `amount` unless paying in BTC, optional `updateWallet` |
+| `insumer-auth/scripts/buy_key.py` | `POST https://api.insumermodel.com/v1/keys/buy` | `txHash`, `chainId`, `amount` (USDC), `appName` (default `"insumer-agent-skills"`), `keyDelivery: "apiKey"`, and the `senderSignature` you pass in `--sender-signature`; no key needed |
+| `insumer-auth/scripts/buy_credits.py` | `POST https://api.insumermodel.com/v1/credits/buy` | `INSUMER_API_KEY`, plus `txHash`, `chainId`, `amount` (USDC), optional `updateWallet`, and the `senderSignature` you pass in `--sender-signature` when one is needed |
 | `insumer-attest/scripts/attest.py` | `POST https://api.insumermodel.com/v1/attest` | `INSUMER_API_KEY` and the request body you provide |
 | `insumer-trust/scripts/trust.py` | `POST https://api.insumermodel.com/v1/trust` | `INSUMER_API_KEY`, the wallet addresses you pass, and optional `proof: "merkle"` |
 | `insumer-trust-batch/scripts/trust_batch.py` | `POST https://api.insumermodel.com/v1/trust/batch` | `INSUMER_API_KEY`, the wallet addresses you pass, and optional `proof: "merkle"`. It always saves the signed response to a local JSON file (`--out`, default `trust_batch_<time>.json` in the working directory) |
@@ -148,7 +148,7 @@ The only credential is `INSUMER_API_KEY`, read from the environment and sent onl
 
 `create_key.py` and `buy_key.py` send `appName: "insumer-agent-skills"` by default, a label on the key that tells InsumerAPI which channel it came from. Pass `--app-name` to use your own; nothing else is collected.
 
-The skills also show `GET https://api.insumermodel.com/v1/credits` (balance check) as a `curl` example. The paid paths in `insumer-auth` (Path 3 and Path 4) begin with a crypto payment that the skill tells the agent never to make without the user's explicit approval of the amount, token, chain and recipient.
+The skills also show `GET https://api.insumermodel.com/v1/credits` (balance check) as a `curl` example. The paid paths in `insumer-auth` (Path 3 and Path 4) begin with a USDC payment that the skill tells the agent never to make without the user's explicit approval of the amount, token, chain and recipient. Where the API asks for it, the wallet that paid also signs a short text confirming it sent the payment; the user signs it with their own wallet, and no script signs it.
 
 ---
 
