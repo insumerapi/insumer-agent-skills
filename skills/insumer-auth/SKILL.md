@@ -284,7 +284,7 @@ curl -s https://api.insumermodel.com/v1/credits \
 | `409` | `/v1/keys/create` | Free key already exists for this email | Reuse existing key |
 | `409` | `/v1/keys/buy` | Wallet already has a key, or txHash already used | Wallet already has a key: top up via Path 4 instead (the same transaction can be used). txHash already used: that payment is spent, a new payment is needed |
 | `422` | `/v1/keys/buy`, `/v1/credits/buy` | On-chain verification failed | Wait for confirmations, verify chain & amount |
-| `422` | `/v1/keys/buy`, `/v1/credits/buy` | The wallet that sent the payment could not be determined, so the payment cannot be bound to a key | Send the next payment as a plain USDC transfer from one wallet. For the payment already sent, write to support@insumermodel.com with the transaction id |
+| `422` | `/v1/keys/buy`, `/v1/credits/buy` | The wallet that sent the payment could not be determined, so the payment cannot be bound to a key | Send the next payment as a plain USDC transfer from one wallet. This payment cannot be used for a key or credits. |
 | `429` | `/v1/keys/create` | 3 keys per IP per 24h, or free-key creation paused for the day | Wait 24h |
 | `503` | `/v1/keys/buy`, `/v1/credits/buy` | The chain read, or a smart-wallet (ERC-1271) signature check, could not be completed. The payment has not been used | Retry the same request in a few seconds |
 | `429` | any keyed endpoint | Daily request limit (100/day on free) | Wait for reset (`Retry-After`), or upgrade tier |
