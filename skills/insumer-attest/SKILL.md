@@ -9,7 +9,7 @@ description: >
   holds with InsumerAPI, or to compose an InsumerAPI wallet_state signal in a
   multi-issuer trust envelope. Read, evaluate, sign, in one call.
 metadata:
-  version: "0.3.1"
+  version: "0.3.2"
   author: InsumerAPI
 ---
 

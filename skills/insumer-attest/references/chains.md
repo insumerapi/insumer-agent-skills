@@ -74,6 +74,7 @@ For these chains, use the dedicated wallet field (not `wallet`) and pass the cha
 
 - Native SOL balance: `contractAddress: "native"`
 - SPL token balance: `contractAddress` is the mint address (base58)
+- NFT ownership: `contractAddress` is a verified collection address (any NFT in that collection counts: standard, compressed or Core) or one NFT's own mint address (that NFT only). An unverified collection tag never counts. Example: Mad Lads collection `J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w`
 - USDC on Solana mint: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`
 - USDT on Solana mint: `Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB`
 

@@ -43,7 +43,7 @@ Check whether the wallet owns at least one NFT in a collection.
 
 | Field | Required | Notes |
 |---|---|---|
-| `contractAddress` | yes | NFT contract address (ERC-721 style on EVM, NFToken issuer on XRPL). 0x + 40 hex on EVM; `"native"` is a `400` here (use `token_balance` for the native coin). |
+| `contractAddress` | yes | NFT contract address (ERC-721 style on EVM, NFToken issuer on XRPL). 0x + 40 hex on EVM; `"native"` is a `400` here (use `token_balance` for the native coin). On Solana: a verified collection address, which any NFT in that collection satisfies, or one NFT's mint address (or the asset ID of a compressed or Core NFT); an unverified collection tag never counts. |
 | `chainId` | yes | |
 | `taxon` | XRPL only | Filter by issuer + taxon (optional, NFToken filtering on XRPL) |
 | `label` | recommended | |
