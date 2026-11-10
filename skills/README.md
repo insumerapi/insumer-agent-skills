@@ -12,6 +12,7 @@ Agent skills for [InsumerAPI](https://insumermodel.com): wallet auth and conditi
 | [insumer-trust-batch](insumer-trust-batch/) | Batch trust profiles (`/v1/trust/batch`) | 0.4.3 | InsumerAPI |
 | [insumer-jwks-verify](insumer-jwks-verify/) | Offline ES256 verification against the public JWKS | 0.2.1 | InsumerAPI |
 | [insumer-discount](insumer-discount/) | Token-holder discounts: store terms, optional wallet proof, signed code (`/v1/verify`) | 0.1.1 | InsumerAPI |
+| [insumer-x402-recipes](insumer-x402-recipes/) | x402 recipes: check a wallet with InsumerAPI before paying another service | 0.1.0 | InsumerAPI |
 
 Each skill includes a `scripts/` folder with request helpers; some also include a `references/` folder with detailed shapes and reference values.
 

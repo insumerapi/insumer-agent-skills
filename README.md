@@ -31,6 +31,7 @@ OAuth proves who the user is. **Wallet auth proves what the wallet holds.** Insu
 | [insumer-trust-batch](skills/insumer-trust-batch/) | Batch trust profiles for multiple wallets (`/v1/trust/batch`) | 0.4.3 |
 | [insumer-jwks-verify](skills/insumer-jwks-verify/) | Offline ES256 verification of signed responses (raw `sig` or JWT) against the public JWKS | 0.2.1 |
 | [insumer-discount](skills/insumer-discount/) | Token-holder discounts at InsumerAPI merchants: read the store's terms, prove the wallet if it pays, create a signed code (`/v1/verify`) | 0.1.1 |
+| [insumer-x402-recipes](skills/insumer-x402-recipes/) | The Agentic Cookbook for x402: five recipes that check a wallet with InsumerAPI before paying another x402 service (rewards, hiring an agent, dollar rules, wallet facts, paid research) | 0.1.0 |
 
 ---
 
@@ -147,6 +148,8 @@ The skills are instructions plus small helper scripts. There are no hooks, no MC
 The only credential is `INSUMER_API_KEY`, read from the environment and sent only to `api.insumermodel.com` in the `X-API-Key` header. No script signs or sends a transaction or holds a private key. None reads any other environment variable (beyond the standard proxy variables Python's HTTP client honors) or any file except a request, wallet list or signed proof you pass on the command line (`--body-file`, `--wallets-file`, `--proof-file`) or on stdin.
 
 `create_key.py` and `buy_key.py` send `appName: "insumer-agent-skills"` by default, a label on the key that tells InsumerAPI which channel it came from. Pass `--app-name` to use your own; nothing else is collected.
+
+`insumer-x402-recipes` has no script. It describes x402 calls to Bitrefill, trust-agent.io, CoinGecko, Ethos and Exa, made by your agent's own x402 client, and links a runnable example on insumermodel.com; it tells the agent never to pay without the user's explicit approval or a standing cap the user set.
 
 The skills also show `GET https://api.insumermodel.com/v1/credits` (balance check) as a `curl` example. The paid paths in `insumer-auth` (Path 3 and Path 4) begin with a USDC payment that the skill tells the agent never to make without the user's explicit approval of the amount, token, chain and recipient. Where the API asks for it, the wallet that paid also signs a short text confirming it sent the payment; the user signs it with their own wallet, and no script signs it.
 
