@@ -24,7 +24,6 @@ Full supported set, from the canonical `ChainId` enum in <https://insumermodel.c
 | World Chain | 480 |
 | Mantle | 5000 |
 | Linea | 59144 |
-| Blast | 81457 |
 | Base | 8453 |
 | Soneium | 1868 |
 | Ronin | 2020 |
@@ -41,6 +40,9 @@ Full supported set, from the canonical `ChainId` enum in <https://insumermodel.c
 | XDC Network | 50 |
 | Robinhood Chain | 4663 |
 | Arc | 5042 |
+| Tempo | 4217 |
+
+Tempo (4217) has no native coin: `contractAddress: "native"` there returns 400, so name the token's contract address. Blast (81457) is retired: the network has shut down, and a request naming it returns 400.
 
 For the always-current canonical list, check the `ChainId` schema in <https://insumermodel.com/openapi.yaml>.
 
