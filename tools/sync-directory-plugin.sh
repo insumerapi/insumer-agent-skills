@@ -28,8 +28,14 @@ build() {
   copy_dir "$hosted_src" "$out/insumer-hosted-tools"
 }
 
-scan() { # refuse anything secret-shaped or a vendor name, same rule as the ChatGPT build
-  local pattern='insr_live_[0-9a-f]{12,}|BEGIN [A-Z ]*PRIVATE KEY|cloudfunctions\.net|firebaseio|[Aa]lchemy|[Cc]ovalent|[Gg]old[Rr]ush|[Hh]elius|[Aa]nkr|publicnode|TronGrid|NowNodes|serviceAccount|npm_[A-Za-z0-9]{30,}'
+scan() { # refuse anything key-shaped, or any name on the private list, same rule as the ChatGPT build
+  # The names live outside the repository (INSUMER_LEAK_PATTERNS, default
+  # ~/.insumer-leak-patterns, one extended regex per line). No file, no sync.
+  local private="${INSUMER_LEAK_PATTERNS:-$HOME/.insumer-leak-patterns}"
+  if [[ ! -s "$private" ]]; then
+    echo "REFUSED: private leak patterns not found at $private" >&2; exit 1
+  fi
+  local pattern="insr_live_[0-9a-f]{12,}|BEGIN [A-Z ]*PRIVATE KEY|npm_[A-Za-z0-9]{30,}|$(grep -vE '^[[:space:]]*(#|$)' "$private" | paste -sd'|' -)"
   if grep -rEn "$pattern" "$root/plugins/insumerapi"; then
     echo "REFUSED: the lines above must not ship." >&2; exit 1
   fi
