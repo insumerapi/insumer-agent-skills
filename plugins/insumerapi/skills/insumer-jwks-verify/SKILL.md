@@ -218,14 +218,6 @@ For the raw form, the same loop runs over `data.attestation.results` with `data.
 4. **Verify in the trust boundary.** Verify on the server that's making the access decision. Never verify in the browser and trust the result. (Browsers can verify; they just can't be the trust boundary.)
 5. **Fail closed.** If verification throws, deny access. Never default to "allow" on verification failure.
 
-## Helper script
-
-`scripts/verify.py`: Python helper that takes a JWT, or a response object carrying `jwt` (from `/v1/attest` with `format: "jwt"`), on stdin and verifies the JWT against the public JWKS. Prints `OK` + payload, or `INVALID` + reason. Given a response with no `jwt`, or when the signing key cannot be fetched or resolved, it prints `NOT CHECKED` and exits non-zero: that is not a verdict on the token. It does not verify raw `sig` responses (every trust profile, and attestations without `format: "jwt"`), condition hashes, the expiry binding or the post-quantum signature. For every check in Python, `pip install "insumer-verify[pq]"` (above) is the complete path (without the `[pq]` extra the post-quantum signature is reported `unverifiable`); use Recipe 3 or `insumer-verify` on npm in JavaScript.
-
-```bash
-echo '{"jwt":"eyJhbG...","kid":"insumer-attest-v2"}' | python scripts/verify.py
-```
-
 ## Error handling
 
 | Symptom | Cause | Fix |
@@ -236,14 +228,16 @@ echo '{"jwt":"eyJhbG...","kid":"insumer-attest-v2"}' | python scripts/verify.py
 | "JWT expired" | Past its `exp` (30 min, or 5 with a delegation condition) | Re-request a fresh attestation; do not extend TTL |
 | "conditionHash mismatch" | Condition object was modified after signing | Untrusted payload: reject |
 
-## Related skills
+## Related tools
 
-| Skill | Purpose |
+This plugin connects the hosted InsumerAPI MCP server, which needs no account or key. Its tools produce the signed responses this skill verifies:
+
+| Tool | Produces |
 |---|---|
-| `insumer-auth` | Get a key (verifying responses doesn't need a key, but requesting them does) |
-| `insumer-attest` | Produces signed responses to verify |
-| `insumer-trust` | Produces signed responses to verify |
-| `insumer-trust-batch` | Verify each profile entry independently |
+| `insumer_attest` | Signed attestation (`/v1/attest`) |
+| `insumer_wallet_trust` | Signed wallet trust profile (`/v1/trust`) |
+| `insumer_batch_wallet_trust` | One signed profile per wallet (`/v1/trust/batch`): verify each entry independently |
+| `insumer_jwks` | The public signing keys |
 
 ## References
 

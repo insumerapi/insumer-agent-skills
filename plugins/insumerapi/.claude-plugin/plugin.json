@@ -2,7 +2,7 @@
   "name": "insumerapi",
   "displayName": "InsumerAPI",
   "version": "0.1.0",
-  "description": "Wallet auth for AI agents: ask whether a wallet meets a condition and get a signed yes or no that anyone can verify offline. Connects the hosted InsumerAPI MCP server (ten tools, no account or key: attestations, wallet trust profiles, signing keys, merchant discounts) and adds skills for the REST API with your own key, key management, discounts and offline verification. Balances are never returned.",
+  "description": "Wallet auth for AI agents: ask whether a wallet meets a condition and get a signed yes or no that anyone can verify offline. Connects the hosted InsumerAPI MCP server (ten tools, no account or key: attestations, wallet trust profiles, signing keys, merchant discounts) and adds skills for calling them well and verifying signed results. Balances are never returned, and nothing moves funds.",
   "author": {
     "name": "InsumerAPI",
     "email": "support@insumermodel.com",

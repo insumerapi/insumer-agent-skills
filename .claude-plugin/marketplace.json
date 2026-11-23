@@ -14,7 +14,7 @@
     {
       "name": "insumerapi",
       "source": "./plugins/insumerapi",
-      "description": "Wallet auth for AI agents: the hosted InsumerAPI MCP server (no account or key) plus skills for the REST API, key management, discounts and offline verification. Same as the ChatGPT plugin, without the x402 recipes."
+      "description": "Wallet auth for AI agents: the hosted InsumerAPI MCP server (no account or key) plus skills for calling it and verifying signed results offline. Instructions only, no scripts."
     }
   ]
 }
